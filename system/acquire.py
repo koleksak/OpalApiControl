@@ -26,11 +26,11 @@ realTimeModeList = {'Hardware Sync':0, 'Simulation':1, 'Software Sync':2, 'Not U
 def connectToModel():
     """Takes the name of the model to connect to(string) and connects based on current model state"""
     print "in connectToModel"
-    project = 'Connect1'
-    model = 'rtdemo1'
+    project = 'ephasorex1'
+    model = 'phasor01_IEEE39'
     # connect to the local project
 
-    projectPath = 'C:/Users/Kellen/OPAL-RT/RT-LABv11_Workspace/Connect1/'
+    projectPath = 'C:/Users/Kellen/OPAL-RT/RT-LABv11_Workspace/ephasorex1/'
     projectName = os.path.join(projectPath, str(project) + '.llp')
     modelPath = os.path.join(projectPath, 'Simulink/')
     modelName = str(model) + '.mdl'
@@ -48,7 +48,7 @@ def connectToModel():
     # print "Model state 1 is %s" %modelState
 
 
-    return modelState
+    # return modelState
 
 def connectToModelTest():
     """Takes the name of the model to connect to(string) and connects based on current model state"""
@@ -103,9 +103,9 @@ def connectToModelTest():
             OpalApiPy.Load(realTimeMode,timeFactor)
             print "RT Project %s is Loaded." %project
             OpalApiPy.LoadConsole()
-            print "Model %s console is loaded" %model
+            print "Model %s console is loading" %model
 
-            chooseExecute = raw_input("Would you like to execute model now?  y/n ")
+            chooseExecute = raw_input("Loading Complete.Would you like to execute model now?  y/n ")
             if chooseExecute == 'y':
                 try:
                     print "Now Executing Model"
@@ -133,8 +133,8 @@ def connectToModelTest():
             # resets the model after loading
             OpalApiPy.Pause()
             print "Model %s is now paused" %model
-            OpalApiPy.Reset()
-            print "Model %s is now reset." %model
+            # OpalApiPy.Reset()
+            # print "Model %s is now reset." %model
 
 
             systemControl = 0
