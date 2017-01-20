@@ -11,7 +11,7 @@
 #***************************************************************************************
 from OpalApiControl.config import *
 import OpalApiControl.system
-from OpalApiControl.system import acquire
+# from OpalApiControl.system import acquire
 import collections
 #***************************************************************************************
 # Globals
@@ -22,7 +22,7 @@ import collections
 # Main
 #*******
 
-def accessAllControlSignals():
+def accessAllSignals():
     """"Gives user access to models's control signals. One client API granted signal control at a time"""
 
     subsystemId = 0     # 0 takes control of all subsystems
@@ -43,12 +43,12 @@ def accessAllControlSignals():
     finally:
         print "Release signal control after changing values"
 
-def releaseAllControlSignals():
+def releaseAllSignals():
     """Releases all signal controls"""
     OpalApiPy.GetSignalControl(0,0)
     print "All signal controls released"
 
-def releaseControlSignal():
+def releaseSignal():
     """Release subsystem by subsystem Id (one value at a time for now)"""
     subSystemList = OpalApiPy.GetSubsystemList()
     for subSystemInfo in subSystemList:
@@ -59,7 +59,7 @@ def releaseControlSignal():
     OpalApiPy.GetSignalControl(int(chooseId),0)
     print "Subsystem %s control released." % chooseId
 
-def accessControlSignal():
+def accessSignal():
     """Access subsystem by subsystem Id (one value at a time for now)"""
     acquire.connectToModel()
     subSystemList = OpalApiPy.GetSubsystemList()
@@ -103,7 +103,7 @@ def setControlSignal(signalId,newSignalValue):
     OpalApiPy.SetControlSignals(controlChange,tuple(controlSignalValues))
 
     print("Signal:{} New Signal Value:{}".format(signalId,newSignalValue))
-    releaseControlSignal()  # add system Id to automatically release
+
 
 
 def setControlSignals(signalIDS,newSignalValues):
@@ -114,11 +114,9 @@ def setControlSignals(signalIDS,newSignalValues):
     controlChange = 1
     signalID = 1
 
-
     controlSignalValues = list(OpalApiPy.GetControlSignals(1))
-
-
     newSignalValues = list(newSignalValues)
+
     # print"signalChange: %s" %signalChange
     print"newsignalvalues %s" %newSignalValues
     num = 0
@@ -126,30 +124,42 @@ def setControlSignals(signalIDS,newSignalValues):
         controlSignalValues[newVals-1] = newSignalValues[num]
         num+=1
 
-
     newSignalValuesList = tuple(controlSignalValues)
     print("SignalChange: " , controlSignalValues)
 
     OpalApiPy.SetControlSignals(controlChange, newSignalValuesList)
-
     print("Signal:{} New Signal Value:{}".format(signalIDS, newSignalValues))
 
 def showControlSignals():
     # Displays available subSystems along with their ID and value.
+    # Returns a Dictionary of key-value (ID,VALUE) for each signal
     subSystemSignals = OpalApiPy.GetControlSignalsDescription()
     systemList = [subSystemSignals]
 
     print("****************Available Signals******************")
+    sigcount = 1
+    iDList = []
     for systems in systemList:
+        sigcount =+1
         systemInfo = systems
         for signal in systemInfo:
             signalType, subSystemId, path, signalName, reserved, readonly, value = signal
-            print(
-            "SubSystem Name:{}  SubSystemID:{}  SignalName:{}  Value:{}".format(path, subSystemId, signalName, value))
+            iDList.append(subSystemId)
+            print("SubSystem Name:{}  SubSystemID:{}  SignalName:{}  Value:{}".format(path, subSystemId, signalName, value))
 
-def setSignals():               ## ADD ARGUMENTS
+    num = 1
+    signalDict = dict.fromkeys(iDList)
+    for item in list(OpalApiPy.GetControlSignals(1)):
+        signalDict[num] = item
+        num+=1
+
+    return signalDict
+
+
+def setSignals():               ## ADD ARGUMENTS ###NOT NEEDED,CAN USE TO RETURN OTHER SIGNAL VALUES (NONCONTROL SIGNALS)
     """
     """
+
 
     acquire.connectToModel()
     signalInfo = OpalApiPy.GetSignalsDescription()
