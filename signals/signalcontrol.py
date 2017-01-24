@@ -140,8 +140,9 @@ def setControlSignals(signalIDS,newSignalValues):
     # OpalApiPy.GetSignalControl(controlChange, 0)
 
 def showControlSignals():
-    # Displays available subSystems along with their ID and value.
-    # Returns a Dictionary of key-value (ID,VALUE) for each signal
+    """Displays available subSystems along with their ID and value.
+    Read-Write Control Signals
+    # Returns a Dictionary of key-value (ID,VALUE) for each signal"""
     subSystemSignals = OpalApiPy.GetControlSignalsDescription()
     systemList = [subSystemSignals]
 
@@ -166,10 +167,11 @@ def showControlSignals():
 
 
 def getControlSignalsDict():
-    """"# Returns a Dictionary of key-value (ID,VALUE) for each control signal. Model must be loaded"""
+    """"# Returns a Dictionary of key-value (ID,VALUE) for each control signal. Model must be loaded
+    Read-Write Control Signals"""
 
-    subSystemSignals = OpalApiPy.GetControlSignalsDescription()
-    systemList = [subSystemSignals]
+    # subSystemSignals = OpalApiPy.GetControlSignalsDescription()
+    # systemList = [subSystemSignals]
 
     iDList = []
     num = 1
@@ -190,32 +192,59 @@ def numControlSignals():
 
 
 def getSignalsDict():
-    """Returns a dictionary of key-value(ID,VALUE) for signals(NOT control signals)"""
-
-
-
-def showSignals():
-    """Displays a list of signals(non-control signals) by Name, ID and Value"""
-
+    """Returns a dictionary of key-value(ID,VALUE) for signals(NOT control signals)
+    Read-Only Dynamic Signals"""
     allSignals = list(OpalApiPy.GetSignalsDescription())
+    # print("signal list before cut: ", allSignals)
 
+    # Remove control signals from list
     numControl = numControlSignals()
-    num = 0
-    for item in range(0,numControl-1):
-        allSignals.pop(num)
-        num +=1
+    del allSignals[:numControl]
 
-    print("signal list before cut: ",allSignals)
-    print("after cut")
+    dynValueList = []
     for signalList in allSignals:
         signal = [signalList]
         for spec in signal:
             signalType, signalId, path, signalName, reserved, readonly, value = spec
-            print("Signal Name:{} SignalID:{} Value:{}".format(path, signalId, value))
+            if (signalType == 1):
+
+                dynValueList.append(value)
+
+    iDList = []
+    num = 1
+    signalDict = dict.fromkeys(iDList)
+    for item in list(dynValueList):
+        signalDict[numControl+num] = item                  # start at ID, but can start at 1 if needed.
+        num += 1
+
+    return signalDict
 
 
 
-def setSignals():               ## ADD ARGUMENTS ###NOT NEEDED,CAN USE TO RETURN OTHER SIGNAL VALUES (NONCONTROL SIGNALS)
+def showSignals():
+    """Displays a list of signals(non-control signals) by Name, ID and Value
+    Read-Only Dynamic Signals"""
+
+    allSignals = list(OpalApiPy.GetSignalsDescription())
+    # print("signal list before cut: ", allSignals)
+
+    #Remove control signals from list
+    numControl = numControlSignals()
+    del allSignals[:numControl]
+
+    dynSignalList = []
+    for signalList in allSignals:
+        signal = [signalList]
+        for spec in signal:
+            signalType, signalId, path, signalName, reserved, readonly, value = spec
+            if(signalType == 1):
+                dynSignalList.append(signal)
+                print("Signal Name:{} SignalID:{} Value:{}".format(path, signalId, value))
+
+
+
+
+def setSignals():               ##CANT SET THESE!!! ADD ARGUMENTS ###NOT NEEDED,CAN USE TO RETURN OTHER SIGNAL VALUES (NONCONTROL SIGNALS)
     """
     """
 
