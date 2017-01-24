@@ -87,23 +87,26 @@ def accessSignal():
     print("Subsystem Name:{}  Signal Name:{} SignalID:{}  ReadOnly:{} Value:{}".format(path,label,chooseId,readonly,value))
 
 
-def setControlSignal(signalId,newSignalValue):
-    """Change signal values by signal subsystem ID,
-     newSignal values takes tuple of values mapped to each signal of the chosen subsystem
-     in consecutive order as specified by the sc_user_interface list"""
-    controlChange = 1
-
-    # accessSignal()
-    # OpalApiPy.SetSignalsByName(signalNames,newSignalValues)
-    print" SignalID:%s" %signalId
-    controlSignalValues = list(OpalApiPy.GetControlSignals(1))
-    print"Control Sig Values:%s" %controlSignalValues
-    controlSignalValues[signalId-1] = newSignalValue
-
-    OpalApiPy.SetControlSignals(controlChange,tuple(controlSignalValues))
-
-    print("Signal:{} New Signal Value:{}".format(signalId,newSignalValue))
-
+# def setControlSignal(signalId,newSignalValue):    ###REMOVE???
+#     """Change signal values by signal subsystem ID,
+#      newSignal values takes tuple of values mapped to each signal of the chosen subsystem
+#      in consecutive order as specified by the sc_user_interface list"""
+#     controlChange = 1
+#
+#     # accessSignal()
+#     # OpalApiPy.SetSignalsByName(signalNames,newSignalValues)   ###REMOVE
+#     print" SignalID:%s" %signalId
+#     controlSignalValues = list(OpalApiPy.GetControlSignals(1))
+#     print"Control Sig Values:%s" %controlSignalValues
+#     controlSignalValues[signalId-1] = newSignalValue
+#
+#     OpalApiPy.SetSignalsById(signalId,tuple(controlSignalValues))
+#     print("Signal:{} New Signal Value:{}".format(signalId,newSignalValue))
+#
+#     #Release Signal Controls
+#     controlChange = 0
+#     OpalApiPy.GetSignalControl(controlChange,signalId)
+#
 
 
 def setControlSignals(signalIDS,newSignalValues):
@@ -111,24 +114,30 @@ def setControlSignals(signalIDS,newSignalValues):
         signalNames can by a tuple (name1,name2....,nameN) or a single name
         newSignalValues can also by a tuple (newValue1,newValue2,....newValueN), or a single value.
         Item indexes in the signal tuple correspond to respective numeric values in the value tuple """
-    controlChange = 1
-    signalID = 1
+    # controlChange = 1
+    # signalID = 1
 
-    controlSignalValues = list(OpalApiPy.GetControlSignals(1))
-    newSignalValues = list(newSignalValues)
+    OpalApiPy.SetSignalsById(signalIDS,newSignalValues)
 
-    # print"signalChange: %s" %signalChange
-    print"newsignalvalues %s" %newSignalValues
-    num = 0
-    for newVals in signalIDS:
-        controlSignalValues[newVals-1] = newSignalValues[num]
-        num+=1
+    # controlSignalValues = list(OpalApiPy.GetControlSignals(1))  ###REMOVE???
+    # newSignalValues = list(newSignalValues)
+    #
+    # # print"signalChange: %s" %signalChange
+    # print"newsignalvalues %s" %newSignalValues
+    # num = 0
+    # for newVals in signalIDS:
+    #     controlSignalValues[newVals-1] = newSignalValues[num]
+    #     num+=1
+    #
+    # newSignalValuesList = tuple(controlSignalValues)
+    # print("SignalChange: " , controlSignalValues)
+    #
+    # OpalApiPy.SetControlSignals(controlChange, newSignalValuesList)
+    # print("Signal:{} New Signal Value:{}".format(signalIDS, newSignalValues))
 
-    newSignalValuesList = tuple(controlSignalValues)
-    print("SignalChange: " , controlSignalValues)
-
-    OpalApiPy.SetControlSignals(controlChange, newSignalValuesList)
-    print("Signal:{} New Signal Value:{}".format(signalIDS, newSignalValues))
+    #Release All Control Signals
+    # controlChange = 0
+    # OpalApiPy.GetSignalControl(controlChange, 0)
 
 def showControlSignals():
     # Displays available subSystems along with their ID and value.
@@ -147,13 +156,63 @@ def showControlSignals():
             iDList.append(subSystemId)
             print("SubSystem Name:{}  SubSystemID:{}  SignalName:{}  Value:{}".format(path, subSystemId, signalName, value))
 
+    # num = 1
+    # signalDict = dict.fromkeys(iDList)
+    # for item in list(OpalApiPy.GetControlSignals(1)):
+    #     signalDict[num] = item
+    #     num+=1
+    #
+    # return signalDict
+
+
+def getControlSignalsDict():
+    """"# Returns a Dictionary of key-value (ID,VALUE) for each control signal. Model must be loaded"""
+
+    subSystemSignals = OpalApiPy.GetControlSignalsDescription()
+    systemList = [subSystemSignals]
+
+    iDList = []
     num = 1
     signalDict = dict.fromkeys(iDList)
     for item in list(OpalApiPy.GetControlSignals(1)):
         signalDict[num] = item
-        num+=1
+        num += 1
 
     return signalDict
+
+def numControlSignals():
+    """Returns number of controllable signals in model.Model must be loaded"""
+    count = 0
+    for num in OpalApiPy.GetControlSignals(1):
+        count +=1
+
+    return count
+
+
+def getSignalsDict():
+    """Returns a dictionary of key-value(ID,VALUE) for signals(NOT control signals)"""
+
+
+
+def showSignals():
+    """Displays a list of signals(non-control signals) by Name, ID and Value"""
+
+    allSignals = list(OpalApiPy.GetSignalsDescription())
+
+    numControl = numControlSignals()
+    num = 0
+    for item in range(0,numControl-1):
+        allSignals.pop(num)
+        num +=1
+
+    print("signal list before cut: ",allSignals)
+    print("after cut")
+    for signalList in allSignals:
+        signal = [signalList]
+        for spec in signal:
+            signalType, signalId, path, signalName, reserved, readonly, value = spec
+            print("Signal Name:{} SignalID:{} Value:{}".format(path, signalId, value))
+
 
 
 def setSignals():               ## ADD ARGUMENTS ###NOT NEEDED,CAN USE TO RETURN OTHER SIGNAL VALUES (NONCONTROL SIGNALS)
@@ -161,7 +220,7 @@ def setSignals():               ## ADD ARGUMENTS ###NOT NEEDED,CAN USE TO RETURN
     """
 
 
-    acquire.connectToModel()
+
     signalInfo = OpalApiPy.GetSignalsDescription()
 
     for signalList in signalInfo:
@@ -171,7 +230,7 @@ def setSignals():               ## ADD ARGUMENTS ###NOT NEEDED,CAN USE TO RETURN
             print("Signal Name:{} SignalID:{} Value:{}".format(path,signalId,value))
 
     OpalApiPy.GetSignalControl(1,0)
-    controlSignalValues = OpalApiPy.GetControlSignals()
+    controlSignalValues = OpalApiPy.GetControlSignals(1)
 
     OpalApiPy.SetSignalsById((1,4),(300,100))
     print("**************Values Changed****************")

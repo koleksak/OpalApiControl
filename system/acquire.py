@@ -23,15 +23,15 @@ realTimeModeList = {'Hardware Sync':0, 'Simulation':1, 'Software Sync':2, 'Not U
 # Main
 # ***************************************************************************************
 
-def connectToModel():
+def connectToModel(project,model):
     """Takes the name of the model to connect to(string) and connects based on current model state"""
     print "in connectToModel"
-    project = 'ephasorex1'
-    model = 'phasor01_IEEE39'
+    # project = 'ephasorex1'
+    # model = 'phasor01_IEEE39'
     # connect to the local project
 
-    projectPath = 'C:/Users/Kellen/OPAL-RT/RT-LABv11_Workspace/ephasorex1/'
-    projectName = os.path.join(projectPath, str(project) + '.llp')
+    projectPath = 'C:/Users/Kellen/OPAL-RT/RT-LABv11_Workspace/'
+    projectName = os.path.join(projectPath,str(project)+'/'+ str(project) + '.llp')
     modelPath = os.path.join(projectPath, 'Simulink/')
     modelName = str(model) + '.mdl'
 
@@ -50,15 +50,15 @@ def connectToModel():
 
     # return modelState
 
-def connectToModelTest():
+def connectToModelTest(project,model):
     """Takes the name of the model to connect to(string) and connects based on current model state"""
     print "in connectToModel"
-    project = 'Connect1'
-    model = 'rtdemo1'
+    # project = 'Connect1'
+    # model = 'rtdemo1'
     # connect to the local project
 
-    projectPath = 'C:/Users/Kellen/OPAL-RT/RT-LABv11_Workspace/Connect1/'
-    projectName = os.path.join(projectPath,str(project) +'.llp')
+    projectPath = 'C:/Users/Kellen/OPAL-RT/RT-LABv11_Workspace/'
+    projectName = os.path.join(projectPath,str(project)+'/'+str(project) +'.llp')
     modelPath = os.path.join(projectPath,'Simulink/')
     modelName = str(model) + '.mdl'
 
@@ -70,7 +70,7 @@ def connectToModelTest():
     filename = os.path.join(modelPath,modelName)
     # OpalApiPy.SetCurrentModel(filename)
     instanceId,modelState = OpalApiPy.ConnectByName(str(model))
-    print "Model State Connected is %s." %modelStateList[modelState]
+    # print "Model State Connected is %s." %modelStateList[modelState]
     print "Now connected to %s model." %modelName
     #print "Model state 1 is %s" %modelState
 
@@ -117,14 +117,21 @@ def connectToModelTest():
                     print "Model %s console is executed" %model
 
                     OpalApiPy.Execute(1)
-                    sleepTime = 5
-                    sleep(sleepTime)
-                    print "Model executed for 5 seconds"
+
+                    sleep(10)
+                    while(OpalApiPy.GetModelState() == OpalApiPy.MODEL_RUNNING):
+                        print"Model Running"
+
                     systemControl = 0
                     OpalApiPy.GetSystemControl(systemControl)
                     print "System Control Released"
                 except:
-                    pass
+                    print "Error: Module execution unsuccessful"
+
+            elif chooseExecute == 'n':
+                print " Model not executed"
+
+
             systemControl = 1
             OpalApiPy.GetSystemControl(systemControl)
             OpalApiPy.ResetConsole()
@@ -155,9 +162,10 @@ def connectToModelTest():
                 OpalApiPy.ExecuteConsole()
                 print "Model %s console is executed" % model
                 OpalApiPy.Execute(1)
-                sleepTime = 5
-                sleep(sleepTime)
-                print "Model executed for 5 seconds"
+
+                sleep(10)
+                while(OpalApiPy.GetModelState() == OpalApiPy.MODEL_RUNNING):
+                    continue
 
                 systemControl = 0
                 OpalApiPy.GetSystemControl(systemControl)
@@ -171,8 +179,11 @@ def connectToModelTest():
             OpalApiPy.ResetConsole()
             print "System Control Granted"
             print "Console is now reset"
+
+            OpalApiPy.Pause()
+            print "Model %s is now paused" % model
             # resets the model after loading
-            OpalApiPy.Reset()
+            # OpalApiPy.Reset()
             print "Model %s is now reset." % model
             print "System Control Released"
 
@@ -183,7 +194,7 @@ def connectToModelTest():
 
 
         else:
-            print "Compile and Assign Model before Loading/Running"
+            print "Compile and Assign Model before Loading or Running"
 
 
 
