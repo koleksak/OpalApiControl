@@ -1,5 +1,7 @@
 OPAL RT-Lab Python/API Interfacing install instructions
-
+'''python
+print f
+'''
 This is an API interfacing package for Opal RT-Lab.
 
 The package is developed to run on the default Python 2.6.4 interpreter that is installed with RT-Lab,
