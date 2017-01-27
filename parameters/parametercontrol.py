@@ -38,7 +38,7 @@ def showParameterValues():
         paramIDList.append(paramID)
         paramValues.append(value)
         count +=1
-        print("ParameterName:{}  ID:{} VariableName:{}  Value:{}".format(paramName,paramID,varName,value))
+        print("ParameterName:{}  ID:{} VariableName:{}  Value:{}".format(path,paramID,varName,value))
 
 
 def setParameterValues(paramIDS,values):
