@@ -22,11 +22,11 @@ Setting up the package for RT-Lab configuration
 
   To import the associated subpackages, enter 
   
-  	from import OpalApiControl.config import *
+  	from OpalApiControl.config import *
 
 3.To run the OpalApiControl package from an IDE(like pycharm), add the following,
 	
-	from OpalApiControlconfig import *
+	from OpalApiControl.config import *
 
 to the Console->Python Console starting script in your IDE.
 The OpalApiControl package can now be run in the Python console of your chosen IDE.
