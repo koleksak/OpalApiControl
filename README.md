@@ -10,8 +10,8 @@ to run from the command line, an IDE of choice, and the RT-Lab python console.
 
 ##**Setting up the package for RT-Lab configuration**
 
-1.Download/Clone the OpalApiControl Repository
-2.Add the chosen destination for the repository to system PATH and user variable PYTHONPATH.  
+1. Download/Clone the OpalApiControl Repository
+2. Add the chosen destination for the repository to system PATH and user variable PYTHONPATH.  
   The PYTHONPATH should also have your version of RTLAB in it as well.
   This step allows the OpalApiControl Package to be run in the command line,
   granted your python interpreter is capable of doing so as well.
@@ -24,7 +24,7 @@ to run from the command line, an IDE of choice, and the RT-Lab python console.
   
   	from import OpalApiControl.config import *
 
-3.To run the OpalApiControl package from an IDE(like pycharm), add the following,
+3. To run the OpalApiControl package from an IDE(like pycharm), add the following,
 	
 	from OpalApiControlconfig import *
 
@@ -34,14 +34,14 @@ The OpalApiControl package can now be run in the Python console of your chosen I
 
 Including the package into the RT-Lab Python Library and interpreter.
 
-1.The OpalApiControl package must be added to the Python Interpreters Library for each interpreter you wish to use.
-2.Access to these settings is found in RT-Lab under Window>Preferences>PyDev.
-3.In the Interactive Console settings, add,
+1. The OpalApiControl package must be added to the Python Interpreters Library for each interpreter you wish to use.
+2. Access to these settings is found in RT-Lab under Window>Preferences>PyDev.
+3. In the Interactive Console settings, add,
 
 	import OpalApiControl;from OpalApiControl.config import *
 
-to the end of your initial interpreter commands.
-4.In the Interpreter-Python section under the libraries tab for each interpreter you wish to use, 
+  to the end of your initial interpreter commands.
+4. In the Interpreter-Python section under the libraries tab for each interpreter you wish to use, 
 add the folder containing the OpalApiControl package.
 
 The OpalApiControl package is now ready for use in the command line, your IDE(example using PyCharm),
@@ -61,7 +61,7 @@ Currently, four OpalApiControl subpackages can be used for model interaction.(om
 which imports all subpackages).
 
 
-aqcuire Package
+**aqcuire Package**
 
 Connects to the chosen model by project name and model name as is specified in your RT-Lab project.
 It is used as follows.
@@ -86,13 +86,11 @@ the OpalApiControl.config subpackage, or can be imported by the user in the Rt-L
 	import OpalApiPy
 
 
+**signalcontrolPackage**
 
-
-signalcontrolPackage
-
-This package accesses dynamic signals within RT-Lab.  The two types of dynamic signals are
-	1.Control Signals(read-and writeable)
-	2.Signals(non-control,read-only)
+This package accesses dynamic signals within RT-Lab.  The two types of dynamic signals are,
+- Control Signals(read-and writeable)
+- Signals(non-control,read-only)
 
 The control signals can be viewed with the following package instruction
 
@@ -125,7 +123,7 @@ Within the signal control package, getSignalsDict() and getControlSignalsDict() 
 the ID number and Value of the signals.  This dictionary can be returned for data extraction from the models values.
 
 
-parametercontrol Package
+**parametercontrol Package**
 
 The parametercontrol package functions much like the signalcontrol package.
 It is unclear as to which order parameters are assigned in RT-Lab. But the proper parameter can be matched by its name and ID as shown in the showParameterValues() function.
@@ -135,12 +133,11 @@ To show a list of available parameters,
 	parametercontrol.showParameterValues()
 
 To change parameter values,
-'''python
+
 	paramIDS = (5,6,7,8)
 	values   = (50,60,70,80)
-
 	parametercontrol.setParameterValues(paramIDS,values)
-'''
+
 The setParameterValues() function can also take a single ID and value as its input.
 
 
