@@ -1,6 +1,6 @@
-OPAL RT-Lab Python/API Interfacing install instructions
+#**OPAL RT-Lab Python/API Interfacing install instructions**
 
-This is an API interfacing package for Opal RT-Lab.
+##This is an API interfacing package for Opal RT-Lab.
 
 The package is developed to run on the default Python 2.6.4 interpreter that is installed with RT-Lab,
 and is also compatabile with the Python 2.7 interpreter.
@@ -8,7 +8,7 @@ Below are a series of steps to complete for the package
 to run from the command line, an IDE of choice, and the RT-Lab python console.
 
 
-Setting up the package for RT-Lab configuration
+##**Setting up the package for RT-Lab configuration**
 
 1.Download/Clone the OpalApiControl Repository
 2.Add the chosen destination for the repository to system PATH and user variable PYTHONPATH.  
@@ -54,7 +54,7 @@ Path Browser in within IDLE.
 
 
 
-Usage with RT-Lab models.
+##**Usage with RT-Lab models.**
 
 The model for which you wish to connect must be compiled in RT-Lab before connecting to the API.
 Currently, four OpalApiControl subpackages can be used for model interaction.(ommiting the config package
@@ -135,12 +135,12 @@ To show a list of available parameters,
 	parametercontrol.showParameterValues()
 
 To change parameter values,
-
+'''python
 	paramIDS = (5,6,7,8)
 	values   = (50,60,70,80)
 
 	parametercontrol.setParameterValues(paramIDS,values)
-
+'''
 The setParameterValues() function can also take a single ID and value as its input.
 
 
