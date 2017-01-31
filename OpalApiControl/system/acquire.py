@@ -30,7 +30,7 @@ def connectToModel(project,model):
     # model = 'phasor01_IEEE39'
     # connect to the local project
 
-    projectPath = 'C:/Users/../OPAL-RT/RT-LABv11_Workspace/'
+    projectPath = 'C:/Users/*/OPAL-RT/RT-LABv11_Workspace/'
     projectName = os.path.join(projectPath,str(project)+'/'+ str(project) + '.llp')
     modelPath = os.path.join(projectPath, 'Simulink/')
     modelName = str(model) + '.mdl'
@@ -57,7 +57,7 @@ def connectToModelTest(project,model):    #####Working on load, and execute stat
     # model = 'rtdemo1'
     # connect to the local project
 
-    projectPath = 'C:/Users/../OPAL-RT/RT-LABv11_Workspace/'
+    projectPath = 'C:/Users/*/OPAL-RT/RT-LABv11_Workspace/'
     projectName = os.path.join(projectPath,str(project)+'/'+str(project) +'.llp')
     modelPath = os.path.join(projectPath,'Simulink/')
     modelName = str(model) + '.mdl'
@@ -72,7 +72,7 @@ def connectToModelTest(project,model):    #####Working on load, and execute stat
     instanceId,modelState = OpalApiPy.ConnectByName(str(model))
     # print "Model State Connected is %s." %modelStateList[modelState]
     print "Now connected to %s model." %modelName
-    print "Model state 1 is %s" %modelState
+    print "Model state 1 is %s" %modelStateList[modelState]
 
 
     try:
@@ -101,7 +101,7 @@ def connectToModelTest(project,model):    #####Working on load, and execute stat
             realTimeMode = realTimeModeList['Software Sync']
             timeFactor = 1
             OpalApiPy.Load(realTimeMode,timeFactor)
-            print "RT Project %s is Loaded." %project
+            print "RT Project %s is Loading." %project
             OpalApiPy.LoadConsole()
             print "Model %s console is loading" %model
 
@@ -119,39 +119,66 @@ def connectToModelTest(project,model):    #####Working on load, and execute stat
                     OpalApiPy.Execute(1)
 
                     #sleep(10)
-                    print"Model State is %s" %modelState
-                    while(OpalApiPy.GetModelState() == OpalApiPy.MODEL_RUNNING):
+                    modelState,realTimeMode = OpalApiPy.GetModelState()
+                    print"Model State is %s" %modelStateList[modelState]
+                    if((modelState == OpalApiPy.MODEL_RUNNING) | (modelState == OpalApiPy.MODEL_LOADED)):
                         print"Model Running"
-                    print"Model State is %s" %modelState
 
-                    systemControl = 0
-                    OpalApiPy.GetSystemControl(systemControl)
-                    print "System Control Released"
+                    else:
+
+                        modelState, realTimeMode = OpalApiPy.GetModelState()
+                        print"Model State is %s" % modelStateList[modelState]
+                        print"Model Not executed"
+                        transitionToPause()
+
+                        # systemControl = 1
+                        # OpalApiPy.GetSystemControl(systemControl)
+                        # OpalApiPy.ResetConsole()
+                        # print "System Control Granted"
+                        # print "Console is now reset"
+                        # # resets the model after loading
+                        # OpalApiPy.Pause()
+                        # print "Model %s is now paused" % model
+                        # # OpalApiPy.Reset()
+                        # # print "Model %s is now reset." %model
+                        #
+                        # systemControl = 0
+                        # OpalApiPy.GetSystemControl(systemControl)
+                        # print "System Control is released"
+                        # # OpalApiPy.Disconnect()
+                        # # print "Disconnected from %s model" % modelName
+
                 except:
-                    print"Model State is %s" %modelState
-                    print "Error: Module execution unsuccessful"
+
+                    modelState, realTimeMode = OpalApiPy.GetModelState()
+                    print"Model State is %s" % modelStateList[modelState]
+                    print"Model Not executed"
+                    transitionToPause()
+
+                    # print "Module execution unsuccessful"
+                    # systemControl = 1
+                    # OpalApiPy.GetSystemControl(systemControl)
+                    # OpalApiPy.ResetConsole()
+                    # print "System Control Granted"
+                    # print "Console is now reset"
+                    # # resets the model after loading
+                    # OpalApiPy.Pause()
+                    # print "Model %s is now paused" % model
+                    # # OpalApiPy.Reset()
+                    # # print "Model %s is now reset." %model
+                    #
+                    # systemControl = 0
+                    # OpalApiPy.GetSystemControl(systemControl)
+                    # print "System Control is released"
+                    # # OpalApiPy.Disconnect()
+                    # # print "Disconnected from %s model" % modelName
 
             elif chooseExecute == 'n':
-                print " Model not executed"
+
+                print "Model not executed"
 
 
-            systemControl = 1
-            OpalApiPy.GetSystemControl(systemControl)
-            OpalApiPy.ResetConsole()
-            print "System Control Granted"
-            print "Console is now reset"
-            # resets the model after loading
-            OpalApiPy.Pause()
-            print "Model %s is now paused" %model
-            # OpalApiPy.Reset()
-            # print "Model %s is now reset." %model
-
-
-            systemControl = 0
-            OpalApiPy.GetSystemControl(systemControl)
-            print "System Control is released"
-
-        elif (modelState == OpalApiPy.MODEL_LOADED) | (modelState == OpalApiPy.MODEL_PAUSED):
+        elif (modelState == OpalApiPy.MODEL_LOADED):
             # If model is loaded but not running, execute the model
             try:
                 print "Now Executing Model"
@@ -166,35 +193,84 @@ def connectToModelTest(project,model):    #####Working on load, and execute stat
                 print "Model %s console is executed" % model
                 OpalApiPy.Execute(1)
 
-                sleep(10)
-                while(OpalApiPy.GetModelState() == OpalApiPy.MODEL_RUNNING):
-                    continue
+                modelState,realTimeMode = OpalApiPy.GetModelState()
+                print"Model State is %s" %modelStateList[modelState]
+                if((modelState == OpalApiPy.MODEL_RUNNING) | (modelState == OpalApiPy.MODEL_LOADED)):
+                    print"Model is running"
 
-                systemControl = 0
-                OpalApiPy.GetSystemControl(systemControl)
-                print "System Control Released"
+                else:
+
+                    modelState, realTimeMode = OpalApiPy.GetModelState()
+                    print"Model State is %s" % modelStateList[modelState]
+                    print"Model Not executed"
+                    transitionToPause()
+
+                    # modelState, realTimeMode = OpalApiPy.GetModelState()
+                    # print"Model Not executed properly"
+                    # print"Model State is %s" % modelStateList[modelState]
+                    # systemControl = 1
+                    # OpalApiPy.GetSystemControl(systemControl)
+                    # OpalApiPy.ResetConsole()
+                    # print "System Control Granted"
+                    # print "Console is now reset"
+                    #
+                    # OpalApiPy.Pause()
+                    # print "Model %s is now paused" % model
+                    # # resets the model after loading
+                    # # OpalApiPy.Reset()
+                    # # print "Model %s is now reset." % model
+                    # # print "System Control Released"
+                    #
+                    # systemControl = 0
+                    # OpalApiPy.GetSystemControl(systemControl)
+                    # print "System Control is released"
+                    # # OpalApiPy.Disconnect()
+                    # # print "Disconnected from %s model" % modelName
+
 
             except:
-                pass
+                modelState,realTimeMode = OpalApiPy.GetModelState()
+                print"Model State is %s" %modelStateList[modelState]
+                print"Model Not executed"
+                fullDisconnect()
+                # print"Model State is %s" %modelStateList[modelState]
+                # systemControl = 1
+                # OpalApiPy.GetSystemControl(systemControl)
+                # OpalApiPy.ResetConsole()
+                # print "System Control Granted"
+                # print "Console is now reset"
+                #
+                # OpalApiPy.Pause()
+                # print "Model %s is now paused" % model
+                # # resets the model after loading
+                # # OpalApiPy.Reset()
+                # # print "Model %s is now reset." % model
+                # # print "System Control Released"
+                #
+                # systemControl = 0
+                # OpalApiPy.GetSystemControl(systemControl)
+                # print "System Control is released"
+                # # OpalApiPy.Disconnect()
+                # # print "Disconnected from %s model" % modelName
 
-            systemControl = 1
-            OpalApiPy.GetSystemControl(systemControl)
-            OpalApiPy.ResetConsole()
-            print "System Control Granted"
-            print "Console is now reset"
+        elif(modelState == OpalApiPy.MODEL_PAUSED):
+            #try:
+                systemControl = 1
+                OpalApiPy.GetSystemControl(systemControl)
+                # OpalApiPy.ExecuteConsole()
+                OpalApiPy.LoadConsole()
+                OpalApiPy.ExecuteConsole()
+                print "Model %s console is executed" % model
+                OpalApiPy.Execute(1)
+                print "Model %s is executed" % model
+                modelState, realTimeMode = OpalApiPy.GetModelState()
+                print"Model State is %s" % modelStateList[modelState]
+                if ((modelState == OpalApiPy.MODEL_RUNNING) | (modelState == OpalApiPy.MODEL_LOADED)):
+                    print"Model is running"
 
-            OpalApiPy.Pause()
-            print "Model %s is now paused" % model
-            # resets the model after loading
-            # OpalApiPy.Reset()
-            print "Model %s is now reset." % model
-            print "System Control Released"
-
-
-            systemControl = 0
-            OpalApiPy.GetSystemControl(systemControl)
-            print "System Control is released"
-
+            #except:
+             #   print"Model Paused FAIL"
+                #fullDisconnect()
 
         else:
             print "Compile and Assign Model before Loading or Running"
@@ -204,15 +280,50 @@ def connectToModelTest(project,model):    #####Working on load, and execute stat
 
 
     finally:
+        print"Complete Connection Successful"
         # Disconnect from Model after testing
-        OpalApiPy.Disconnect()
-        print "Disconnected from %s model" %modelName
+        #OpalApiPy.Disconnect()
+        #print "Disconnected from %s model" %modelName
 
 
+def fullDisconnect():
+    """Basic disconnect steps to reset matlab/simulink console, then rtlab console, then disconnect from the model"""
 
+    systemControl = 1
+    OpalApiPy.GetSystemControl(systemControl)
+    OpalApiPy.ResetConsole()
+    print "System Control Granted"
+    print "Console is now reset"
 
+    OpalApiPy.Pause()
+    print "Model %s is now paused"
 
+    OpalApiPy.Reset()
+    print "Model %s is now reset."
+    print "System Control Released"
 
+    systemControl = 0
+    OpalApiPy.GetSystemControl(systemControl)
+    print "System Control is released"
+    OpalApiPy.Disconnect()
+    print "Disconnected from %s model"
 
+def transitionToPause():
+    """Allows model to transition to pause state
+    without resetting matlab/simulink console, or rtlab console"""
+
+    modelState, realTimeMode = OpalApiPy.GetModelState()
+    print"Model State is %s" % modelStateList[modelState]
+    systemControl = 1
+    OpalApiPy.GetSystemControl(systemControl)
+    print"System Control Granted"
+
+    OpalApiPy.PauseConsole()
+    print"Console is now paused"
+    OpalApiPy.Pause()
+    print "Model is now paused"
+    systemControl = 0
+    OpalApiPy.GetSystemControl(systemControl)
+    print "System Control is released"
 
 
