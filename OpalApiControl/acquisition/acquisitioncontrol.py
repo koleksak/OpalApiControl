@@ -26,42 +26,79 @@ from OpalApiControl.config import *
 #*******
 
 
+def syncAcqReturn(GroupNumber,interval):
+    """Performs data acquisition at the specified time interval if the model is
+    running, until the model stops running"""
+    #Data Acquisition parameters
+    acqGroup = GroupNumber-1
+    synchronization = 0
+    interpolation = 0
+    threshold = 1
+    acqTimeStep = 0.001
 
-def acquisitionReturn(GroupNumber):
-    """Access control to acquisition signals.Model Must be Running"""
-    modelState,realtimeMode = OpalApiPy.GetModelState()
-    print(modelState)
+    dataRequestTime = 0
+    acqControl = 1
 
-    try:
-        if(modelState == OpalApiPy.MODEL_RUNNING):
+    projectPath,modelName = OpalApiPy.GetCurrentModel()
+    modelName = os.path.splitext(modelName)
+    clockpath = modelName[0] + '/sm_master/clock/port1'
+    simulationClock = OpalApiPy.GetSignalsByName(clockpath)
+    previousAcqClock = 0
+    print(simulationClock)
+    # try:
+    modelState,realTimeMode = OpalApiPy.GetModelState()
+    print"model state %s" %modelState
+    OpalApiPy.GetAcquisitionControl(acqControl, GroupNumber)
 
-            acqGroup = GroupNumber
-            synchronization = 0
-            interpolation = 0
-            threshold = 1
-            acqTimeStep = 0.001
+    numTriggers = 0
+    while(modelState == OpalApiPy.MODEL_RUNNING):
+        simulationClock = OpalApiPy.GetSignalsByName(clockpath)
+        if(interval < (simulationClock-previousAcqClock)):
 
-            while(modelState == OpalApiPy.MODEL_RUNNING):
+            print"simclock %s" %simulationClock
+            print"prev acq clock %s" %previousAcqClock
+            previousAcqClock = simulationClock
 
-                acqList = OpalApiPy.GetAcqGroupSyncSignals(acqGroup,synchronization,interpolation, \
-                                                           threshold,acqTimeStep)
+            acqList = OpalApiPy.GetAcqGroupSyncSignals(acqGroup, synchronization, interpolation, \
+                                                       threshold, acqTimeStep)
 
-                sigVals, monitorInfo,simTimeStep,endFrame = acqList
+            sigVals, monitorInfo, simTimeStep, endFrame = acqList
+            missedData, offset, simTime, sampleSec = monitorInfo
 
-                portID = 1
-                for item in sigVals:
-                    print("ID:{}  Value:{}".format(portID,item))
-                    portID +=1
+            # sets async data acquisiion to group #,rearm trigger after S seconds
+            repeat = True
+            for items in monitorInfo:
+                print("missed Data:{}  offset:{}  simTime:{}  sampleSec:{}".format(missedData, offset, simTime, \
+                                                                                   sampleSec))
+            portID = 1
+            for item in sigVals:
+                print("ID:{}  Value:{} ".format(portID, item))
+                # sampleTimeInterval = OpalApiPy.GetAcqSampleTime(1)
+                # print("Sample acq interval", sampleTimeInterval)
+                portID += 1
+
+            numTriggers += 1
+            print"Acquisition triggered %s times" % numTriggers
+            modelState, realTimeMode = OpalApiPy.GetModelState()
 
         else:
-            print("Model must be running before data acquisition")
+            print"Interval Range not exceeded"
+            modelState, realTimeMode = OpalApiPy.GetModelState()
+            # previousAcqClock = simulationClock
 
-    finally:
-        #Release acquisition control
-        OpalApiPy.GetAcquisitionControl(0,GroupNumber)
-        OpalApiPy.Disconnect()
-        print("Disconnected from model")
 
+    if(modelState != OpalApiPy.MODEL_RUNNING):
+        print"Model must be running to trigger data acquisition"
+        OpalApiPy.GetAcquisitionControl(acqControl, GroupNumber)
+        print"Group acquisition control released"
+
+    # except:
+    #     print"Error: acquisition failed"
+    #
+    # finally:
+    #     acqControl = 0
+    #     OpalApiPy.GetAcquisitionControl(acqControl,group)
+    #     print"Group acquisition control released"
 
 
 def showAcquisitionSignals(acqGroup):
