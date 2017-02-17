@@ -1,4 +1,4 @@
-
+# This sets data into a data list, and retrieves the data after every entry depending on the model sampling rate.
 from config import *
 print("in File threadTest1")
 if __name__ == '__main__':
