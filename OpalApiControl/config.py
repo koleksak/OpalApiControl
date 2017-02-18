@@ -12,6 +12,8 @@ from signals import signalcontrol
 import parameters
 from parameters import parametercontrol
 import acquisition
-from acquisition import acquisitioncontrol
+from OpalApiControl.acquisition import acquisitioncontrol
 from time import sleep
 import collections
+import threading
+import multiprocessing
