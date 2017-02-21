@@ -53,6 +53,29 @@ class DataList:
             print"Acq ID: {}  Value: {}".format(count,item)
             count +=1
 
+        allSignals = list(OpalApiPy.GetSignalsDescription())
+        # print("signal list before cut: ", allSignals)
+        acqSigsTotal = OpalApiPy.GetNumSignalsForGroup(self.GroupNumber-1)
+        acqSignalList = []
+        dynSignalList = []
+        print"*****Acquisition Signals*****"
+        acqCount = 0
+        for signalList in allSignals:
+            signal = [signalList]
+            for spec in signal:
+                signalType, signalId, path, signalName, reserved, readonly, value = spec
+                if (signalType == 0):
+                    acqSignalList.append(signal)
+                    print("Acq Signal #: {}  Signal Name:{} SignalID:{} Value:{}".format(acqCount+1,path, signalId, value))
+                    acqCount += 1
+
+        if(acqSigsTotal > acqCount):
+            print"*****Additional Dynamic Signals In Group*****"
+            dynSig = acqCount
+            for item in range(acqCount,acqSigsTotal):
+                print"Acq Signal #: {}  Value: {} ".format(dynSig + 1,self.dataValues[index][dynSig])
+                dynSig +=1
+
 
 
 
