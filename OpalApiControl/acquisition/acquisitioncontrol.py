@@ -93,6 +93,10 @@ class simulationTimeThread(threading.Thread):   # Work in Progress for accessing
         threadName = 'SimulationClock Thread'
         self.threadName = threadName
         lock = threading.Lock()
+        projectPath = 0
+        modelName = 0
+        self.projectPath = projectPath
+        self.modelName = modelName
         self.lock = lock
 
         simulationClock = 0
@@ -100,8 +104,8 @@ class simulationTimeThread(threading.Thread):   # Work in Progress for accessing
 
     def run(self):
         acquire.connectToModel(self.project, self.model)
-        projectPath, modelName = OpalApiPy.GetCurrentModel()
-        modelName = os.path.splitext(modelName)
+        self.projectPath, self.modelName = OpalApiPy.GetCurrentModel()
+        modelName = os.path.splitext(self.modelName)
         clockpath = modelName[0] + '/sm_master/clock/port1'
         modelState, realTimeFactor = OpalApiPy.GetModelState()
         while (modelState == OpalApiPy.MODEL_RUNNING):
@@ -112,10 +116,9 @@ class simulationTimeThread(threading.Thread):   # Work in Progress for accessing
             modelState, realTimeFactor = OpalApiPy.GetModelState()
             sleep(self.interval)
 
-
-
         OpalApiPy.Disconnect()
         print"Thread- " + self.threadName + " Exited"
+
 
 
 
@@ -186,6 +189,7 @@ class acquisitionThreadReturn(threading.Thread):
         lastIndex = 0
         while(modelState == OpalApiPy.MODEL_RUNNING):
             lastEntry = len(self.dataList.dataValues)
+            modelState, realTimeFactor = OpalApiPy.GetModelState()
             if((lastEntry != lastIndex) & (len(self.dataList.dataValues) != 0)):
                 self.lock.acquire()
                 print"Lock Acquired by %s" %self.threadName
@@ -224,7 +228,8 @@ class StartAcquisitionThreadWithTime(threading.Thread,DataList):
         print "Thread- " + self.threadName
         acquire.connectToModel(self.project,self.model)
         modelState,realTimeFactor = OpalApiPy.GetModelState()
-        clockTime = simulationTimeThread(self.project,self.model)
+        clockTime = simulationTimeThread(self.project,self.model,self.interval)
+        # clockTime.setDaemon(True)
         clockTime.start()
         clockTime.join(1)
         simulationClock = clockTime.simulationClock
@@ -248,10 +253,58 @@ class StartAcquisitionThreadWithTime(threading.Thread,DataList):
                 #print"Thread UP"
 
             else:
-                clockTime = simulationTimeThread(self.project,self.model)
-                clockTime.start()
-                clockTime.join(1)
+                modelState, realTimeFactor = OpalApiPy.GetModelState()
                 simulationClock = clockTime.simulationClock
+
+        OpalApiPy.Disconnect()
+        print"Thread- " + self.threadName + " Exited"
+
+
+class acquisitionThreadReturnWithTime(threading.Thread):
+    def __init__(self,project,model,datalist,GroupNumber,threadName,interval):
+        threading.Thread.__init__(self)
+        self.project = project
+        self.model = model
+        self.threadName = threadName
+        self.GroupNumber = GroupNumber
+        self.interval = interval
+        lock = threading.Lock()
+        self.dataList = datalist
+        self.lock = lock
+        # self.setDaemon(True)
+
+    def run(self):
+        print "Thread- " + self.threadName
+        acquire.connectToModel(str(self.project), str(self.model))
+        modelState, realTimeFactor = OpalApiPy.GetModelState()
+        clockTime = simulationTimeThread(self.project, self.model,self.interval)
+        clockTime.setDaemon(True)
+        clockTime.start()
+        clockTime.join(2)
+        simulationClock = clockTime.simulationClock
+        previousAcqClock = 0
+        lastIndex = 0
+        while(modelState == OpalApiPy.MODEL_RUNNING):
+            lastEntry = len(self.dataList.dataValues)
+            if (self.interval < (simulationClock - previousAcqClock)):
+                modelState, realTimeFactor = OpalApiPy.GetModelState()
+                if((lastEntry != lastIndex) & (len(self.dataList.dataValues) != 0)):
+                    self.lock.acquire()
+                    print"Lock Acquired by %s" %self.threadName
+                    print("Last acquisition call returns- {}".format(self.dataList.dataValues[lastIndex-1]))
+                    lastIndex = lastEntry
+                    print"Lock Released by %s" %self.threadName
+                    modelState, realTimeFactor = OpalApiPy.GetModelState()
+                    self.lock.release()
+                    previousAcqClock = simulationClock
+                    # sleep(self.interval)
+            else:
+                #clockTime = simulationTimeThread(self.project, self.model,self.interval)
+                #clockTime.start()
+                #clockTime.join(1)
+                modelState, realTimeFactor = OpalApiPy.GetModelState()
+                simulationClock = clockTime.simulationClock
+
 
         OpalApiPy.Disconnect()
         print"Thread- " + self.threadName + " Exited"
