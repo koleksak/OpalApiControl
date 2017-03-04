@@ -40,9 +40,9 @@ def connectToModel(project,model):
     print "Now connected to '%s' project." % projectName
 
     # Connects to model
-    filename = os.path.join(modelPath, modelName)
-    # OpalApiPy.SetCurrentModel(filename)
-    instanceId, modelState = OpalApiPy.ConnectByName(str(model))
+    #filename = os.path.join(modelPath, modelName)
+    #OpalApiPy.SetCurrentModel(filename)
+    modelState,realTimeMode = OpalApiPy.GetModelState()
     print "Model State Connected is %s." % modelStateList[modelState]
     print "Now connected to %s model." % modelName
     # print "Model state 1 is %s" %modelState
@@ -67,9 +67,9 @@ def connectToModelTest(project,model):    #####Working on load, and execute stat
     print "Now connected to '%s' project." % projectName
 
     #Connects to model
-    filename = os.path.join(modelPath,modelName)
+    #filename = os.path.join(modelPath,modelName)
     # OpalApiPy.SetCurrentModel(filename)
-    instanceId,modelState = OpalApiPy.ConnectByName(str(model))
+    modelState, realTimeMode = OpalApiPy.GetModelState()
     # print "Model State Connected is %s." %modelStateList[modelState]
     print "Now connected to %s model." %modelName
     print "Model state 1 is %s" %modelStateList[modelState]
