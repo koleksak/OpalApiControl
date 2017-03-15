@@ -1,6 +1,8 @@
 #***************************************************************************************
 #Description
-# Allows control of parameter values
+# Accesses parameter signals in RT-Lab. Parameter Signals are defined in the sm_master
+# of RT-Lab and have values that are predefined in model development.  This module allows for
+# the dynamic changing, reading and viewing of parameters through the Opal RT-Lab API functions
 #
 #***************************************************************************************
 
@@ -16,8 +18,6 @@ from OpalApiControl.config import *
 #***************************************************************************************
 
 
-
-
 #***************************************************************************************
 # Main
 #*******
@@ -29,7 +29,6 @@ def showParameterValues():
 
     parameterList = list(OpalApiPy.GetParametersDescription())
 
-    # print(parameterList
     count = 0
     paramIDList = []
     paramValues = []
@@ -55,13 +54,18 @@ def setParameterValues(paramIDS,values):
     """
     # try:
     if(isinstance(paramIDS,int) & (isinstance(values,float) | (isinstance(values,int)))):
+        # Sets Parameter value if Only one Signal Id and Value are input
         valuePair = ((paramIDS,values),(paramIDS,values))
         OpalApiPy.SetParameters(tuple(valuePair))
 
     elif(len(paramIDS)) == len(values):
+        # Sets Parameter Values for groupings of Signal Id's and Value's
 
+        # Allows access to Parameter Control of API call
         OpalApiPy.GetParameterControl(0)
 
+        # Converts user input Value and Signal Id's into a dictionary for  key=ID arg=value pairing
+        # and then the dictionary is converted to a tuple for proper RT-Lab API function input
         valuePairsDict = dict.fromkeys(paramIDS)
         num = 0
         for item in values:
@@ -70,14 +74,10 @@ def setParameterValues(paramIDS,values):
 
         valuePairsTup = valuePairsDict.items()
         OpalApiPy.SetParameters(tuple(valuePairsTup))
-
-
-        # print("Error: Number of IDS must match number of values")
-
-
-    # finally:
-        # Releases parameter control when finished
-    #     OpalApiPy.GetParameterControl(0)
+        #Releases parameter control when finished
+        OpalApiPy.GetParameterControl(0)
+    else:
+        print"error:Proper ID, Value Pair not given."
 
 def getParametersDict():
     """Returns a Dictionary of key-value(ID,VALUE) for each parameter in the connected model"""
