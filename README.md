@@ -1,6 +1,8 @@
-#**OPAL RT-Lab Python/API Interfacing install instructions**
+## This is an API interfacing package for Opal RT-Lab.
 
-##This is an API interfacing package for Opal RT-Lab.
+**OPAL RT-Lab Python/API Interfacing install instructions**
+
+Download the OpalApiControl Package and run the setup.py script.
 
 The package is developed to run on the default Python 2.6.4 interpreter that is installed with RT-Lab,
 and is also compatabile with the Python 2.7 interpreter.
@@ -8,7 +10,7 @@ Below are a series of steps to complete for the package
 to run from the command line, an IDE of choice, and the RT-Lab python console.
 
 
-##**Setting up the package for RT-Lab configuration**
+## **Setting up the package for RT-Lab configuration**
 
 1. Download/Clone the OpalApiControl Repository
 2. Add the chosen destination for the repository to system PATH and user variable PYTHONPATH.  
@@ -41,20 +43,20 @@ Including the package into the RT-Lab Python Library and interpreter.
 	import OpalApiControl;from OpalApiControl.config import *
 
   to the end of your initial interpreter commands.
-4. In the Interpreter-Python section under the libraries tab for each interpreter you wish to use, 
-add the folder containing the OpalApiControl package.
+4. In the Interpreter-Python section under the libraries tab for each interpreter you wish to use,  
+   add the folder containing the OpalApiControl package.
 
 The OpalApiControl package is now ready for use in the command line, your IDE(example using PyCharm),
-and Rt-Lab's interactive console.
+and RT-Lab's interactive console.
 
-NOTE** the package will run without having to import in the python console of your IDE, or Rt-Lab. However,
-when using the command line, the OpalApiControl package, and OpalApiControl.config (*all) must be imported.  
+NOTE *the package will run without having to import in the python console of your IDE, or Rt-Lab. However,
+when using the command line, the OpalApiControl package, and OpalApiControl.config (\*all) must be imported.  
 This is also true if using the Python Shell(IDLE), as long as the package is imported into your 
-Path Browser in within IDLE.
+Path Browser in within IDLE.*
 
 
 
-##**Usage with RT-Lab models.**
+## **Usage with RT-Lab models.**
 
 The model for which you wish to connect must be compiled in RT-Lab before connecting to the API.
 Currently, four OpalApiControl subpackages can be used for model interaction.(ommiting the config package
@@ -72,10 +74,12 @@ The above will state whether the connection was successful or not, including the
 and project to which it is now connected.  It will also display the current 
 state(LOADED,PAUSED,RUNNING) of the model upon connection.
 
-***The package is currently being expanded to allow for model Loading and executing from within the python console***
-
-
-
+To load or execute the model call the function,
+	
+	acquire.connectToModelTest('projectName','modelName')
+	
+If the model is already loaded, it will execute, otherwise, you will be asked if you would like to execute the model at the 
+time of the call.
 
 All of the following package functions require a connection, and for the model to be Loaded so signals and parameters can be accessed.
 
@@ -84,6 +88,61 @@ the built in Api function OpalApiPy.Disconnect(). This module is imported direct
 the OpalApiControl.config subpackage, or can be imported by the user in the Rt-Lab python console using
 
 	import OpalApiPy
+
+**acquisitioncontrolPackage**
+
+This is the main package for data acquisition of RT-Lab acquisition group signals, and dynamic signals added to the group list.
+Acquisitions are started with threads, which call the 'acquire.connectToModel('projectName','modelName')' function for the proper
+model for you.  This connection is made when instantating the data acquisition thread.  A sample of creating the DataList object
+required for storing acquisition data, and choosing sampling intervals at which to acquire is shown below,
+
+
+	dataStruct1 = acquisitioncontrol.DataList(1)    # sets up the data structure to the assigned group signals in group 1
+	structSet = acquisitioncontrol.StartAcquisitionThread('projectName','modelName',dataStruct1,1,"AcqThread Set",0.03333)
+	structSet.start()    #starts acquisition thread. acquisition thread exits when the model is paused or stopped
+
+
+"structSet = ..." creates an acquisition thread object initialized by the project, model, DataList(to store data), group number,
+acquire name, and sampling interval(30/s in this case).
+
+Access to the DataList object acquired values can be done using the DataList object created(example dataStruct1),
+
+	dataStruc1[index]
+
+For accessing a list of all group signals for a chosen index, or
+
+	dataStruct1[index][signal#]
+
+
+to access a particular signal value for a chosen sampling index.
+
+Also builtin to the DataList object is a method to return the last acquired data list(this is the primary funciton of the
+acquisitionThreadReturn() discussed next). To return the last acquired DataList,
+
+	dataStruct1.returnLastAcq()
+
+User's may create their own acquisition return functions for specific use, however the acquisitionThreadReturn() discussed below
+will continuously return fetch the last acquired DataList values for the chosen sampling interval which was defined when setting the 
+initial acquisition thread.
+
+For returning acquired data, use,
+
+
+	structRet = acquisition.acquisitionThreadReturn('projectName','modelName',dataStruct1,1,"AcqThread Set",1)
+	structRet.start()
+
+
+The last parameter of the funciton above is 1 if the sampling interval is to be the same as the structSet object. 
+This is a built in thread which can adjusted for real time data return from the dataStruct1 object. An example of returning data
+which is not the last acquired list is shown below, with the understanding that the data Set and data Return threads are started,
+
+	#prints the values for signal 1 in the first 100 samples
+	for i in range(0,100)
+	print(structRet.dataList.dataValues[0][i])
+
+
+*A quick note about acquisition calls.  Once the acquisition thread exits, the structSet must be reinitialized with the same
+DataList to store the acquisitions. This will add new data to exisiting acquisitions. Same goes for data return objects*
 
 
 **signalcontrolPackage**
