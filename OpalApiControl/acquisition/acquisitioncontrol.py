@@ -237,13 +237,6 @@ class acquisitionThreadReturn(threading.Thread):
         OpalApiPy.Disconnect()
         print"Thread- " + self.threadName + " Exited"
 
-def returnLastAcq(GroupNumber):   ##Made this a class function ***CAN REMOVE***
-    """Returns the data for the last acquisition set in acqDir by acquisitionThread as well as
-    the last index of acqusitions"""
-
-    lastAcq = len(DataList.dataValues)
-    return lastAcq, DataList.dataValues[lastAcq-1]
-
 
 class StartAcquisitionThreadWithTime(threading.Thread,DataList):    #REMOVE
     def __init__(self,project,model,dataList,GroupNumber,threadName,interval):
