@@ -1,8 +1,8 @@
 #***************************************************************************************
 #Description
 #Module for creating data lists and acquisition threads to store data and
-#retrieve data from running RT-Lab model. Threads for setting data and retrieving data
-#as well as keeping track of a time clock added to the main RT-Lab model are available.
+#retrieve data from running RT-Lab model. Threads for setting data and retrieving data available.
+#
 #
 #***************************************************************************************
 
@@ -15,7 +15,7 @@ from OpalApiControl.config import *
 import threading
 import multiprocessing
 from time import sleep
-
+import logging
 
 
 #***************************************************************************************
@@ -28,6 +28,7 @@ from time import sleep
 # Main
 #*******
 
+"""!!!!MAKE SHOW ACQUISITION DATA FUNCTION OUTSIDE OF OBJECT(MODEL MUST BE RUNNING)!!!!"""
 
 class DataList:
     # Creates a data structure for an acquisition group thread
@@ -170,11 +171,17 @@ class StartAcquisitionThread(threading.Thread,DataList):
         # model = 'phasor1_IEEE39'
         acquire.connectToModel(self.project,self.model)
         modelState,realTimeFactor = OpalApiPy.GetModelState()
-        while(modelState == OpalApiPy.MODEL_RUNNING):
+        while(modelState == OpalApiPy.MODEL_RUNNING and modelState != OpalApiPy.MODEL_PAUSED):
 
 
             # print"Lock acquired by %s" %self.threadName
-            acqList = OpalApiPy.GetAcqGroupSyncSignals(self.GroupNumber - 1, 0, 0, 1, 1)
+            try:
+                acqList = OpalApiPy.GetAcqGroupSyncSignals(self.GroupNumber - 1, 0, 0, 1, 1)
+
+            except:
+               logging.warning('Thread Acq {} Exited '.format(self.threadName))
+               break
+
             sigVals, monitorInfo, simTimeStep, endFrame = acqList
             missedData,offset,self.simulationTime,self.sampleSec = monitorInfo
             if(self.simulationTime-self.lastAcq >= self.interval):
@@ -185,6 +192,7 @@ class StartAcquisitionThread(threading.Thread,DataList):
                 #print("simTime at Acq: ", self.simulationTime)
                 #print("sampleSec: ", self.sampleSec)
             else:
+                modelState, realTimeFactor = OpalApiPy.GetModelState()
                 continue
                 #print("simTime Last Acq: ", self.simulationTime)
             # dataList = DataList(self.GroupNumber)
@@ -196,7 +204,7 @@ class StartAcquisitionThread(threading.Thread,DataList):
             # sleep(self.interval)
 
         OpalApiPy.Disconnect()
-        print"Thread- " + self.threadName + " Exited"
+        #print"Thread- " + self.threadName + " Exited"
 
 
 
