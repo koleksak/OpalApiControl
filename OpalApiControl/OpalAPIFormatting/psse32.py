@@ -49,6 +49,12 @@ govcount = 0
 Pss = []
 Pssparams = {}
 psscount = 0
+Dfig = []
+Dfigparams = {}
+Wind = []
+Windparams = {}
+Busfreq = []
+Pmu = []
 
 def testlines(fid):
     """Check the raw file for frequency base"""
@@ -700,7 +706,6 @@ def add_dyn(model, data):
         Exc.append(psatlist)
         Excparams[busidx] = param
 
-    #ADD GOVERNOR DEVICES
     elif model == 'IEEEG1':
         global govcount
         govcount += 1
@@ -736,10 +741,6 @@ def add_dyn(model, data):
 
         Tg.append(psatlist)
         Tgparams[busidx] = param
-
-
-    #ADD Power System Stabilizer Devices
-
 
     elif model == 'IEE2ST':
         psscount += 1
@@ -867,6 +868,119 @@ def add_dyn(model, data):
         Pss.append(psatlist)
         Pssparams[busidx] = param
 
+    elif model == 'DFIG':
+        busidx = data[0]
+        data = data[2:]
+        if busidx in BusParams.keys():
+            dev = 'PV'
+            gen_idx = busidx
+
+        elif busidx == SW[0]:
+            dev = 'SW'
+            gen_idx = SW[0]
+
+        else:
+            raise KeyError
+
+        param = {'bus': busidx,
+                 'speednum': data[0],
+                 'Sn': EMPTY,
+                 'Vn': 20,
+                 'freq': 60,
+                 'Rs': EMPTY,
+                 'Xs': data[1],
+                 'Rr': EMPTY,
+                 'Xr': data[4],
+                 'Xu': EMPTY,
+                 'Hm': data[2],
+                 'Kp': EMPTY,
+                 'Tp': EMPTY,
+                 'Kv': EMPTY,
+                 'Teps': EMPTY,
+                 'R': EMPTY,
+                 'npoles': EMPTY,
+                 'nb': EMPTY,
+                 'nGB': EMPTY,
+                 'pmax': EMPTY,
+                 'pmin': EMPTY,
+                 'qmax': EMPTY,
+                 'qmin': EMPTY,
+                 'status': data[0],
+                 }
+
+        psatlist = [busidx, param['speednum'], param['Sn'], param['Vn'], param['freq'], param['Rs'],
+                    param['Xs'], param['Rr'], param['Xr'], param['Xu'], param['Hm'], param['Kp'],
+                    param['Tp'], param['Kv'], param['Teps'], param['R'], param['npoles'], param['nb'],
+                    param['nGB'], param['pmax'], param['pmin'], param['qmin'], param['qmin'], param['status']]
+
+        Dfig.append(psatlist)
+        Dfigparams[busidx] = param
+
+    elif model == 'WTE':
+        #Type 1 and 2
+        busidx = data[0]
+        data = data[2:]
+        if busidx in BusParams.keys():
+            dev = 'PV'
+            gen_idx = busidx
+
+        elif busidx == SW[0]:
+            dev = 'SW'
+            gen_idx = SW[0]
+
+        else:
+            raise KeyError
+
+        param = {'model': data[0],
+                 'nomspeed': 13,
+                 'airdens': 1.225,
+                 'tau': 4,
+                 'delT': 0.1,
+                 'c': 20,
+                 'k': 2,
+                 'Tsr': 5,
+                 'Ter': 15,
+                 'Vwr': 0,
+                 'Tsg': 5,
+                 'Teg': 15,
+                 'Vwg': 0,
+                 'Z0': 0.01,
+                 'fstep': 0.2,
+                 'nharm': 50
+                 }
+        psatlist = [param['model'], param['nomspeed'], param['airdens'], param['tau'],
+                    param['delT'], param['c'],param['k'], param['Tsr'], param['Ter'], param['Vwr'],
+                    Windparams[busidx]['H'], param['Tsg'], param['Teg'], param['Vwg'], param['Z0'],
+                    param['fstep'], param['nharm']]
+
+        Windparams[busidx].update(param)
+        Wind.append(psatlist)
+
+
+    elif model == 'WTT':
+        #Type 1 and 2
+        busidx = data[0]
+        data = data[3:]
+        if busidx in BusParams.keys():
+            dev = 'PV'
+            gen_idx = busidx
+
+        elif busidx == SW[0]:
+            dev = 'SW'
+            gen_idx = SW[0]
+
+        else:
+            raise KeyError
+
+        param = {'H': data[0],
+                 'Damp': EMPTY,
+                 'Htf': EMPTY,
+                 'Freq1': EMPTY,
+                 'Dshaft': EMPTY
+                 }
+
+        Windparams[busidx] = param
+
     else:
         logging.warning('Skipping unsupported mode <{}> on bus {}'.format(model, data[0]))
 
@@ -902,6 +1016,18 @@ if __name__ == '__main__':
     SysParam['Exc'] = Exc
     SysParam['Tg'] = Tg
     SysParam['Pss'] = Pss
+    SysParam['Dfig'] = Dfig
+    SysParam['Wind'] = Wind
+    #Add PMU(must calculate)
+    for bus in range(0,len(SysParam['Bus'])):
+        data = [bus+2, 0.001, 0.001, 1]
+        Busfreq.append(data)
+    SysParam['Busfreq'] = Busfreq
+
+    for bus in range(0,len(SysParam['Bus'])):
+        data = [bus+2, BusParams[bus+2]['Vn'], 60, 0.05, 0.05, 1, 30, 2, 0]
+        Pmu.append(data)
+    SysParam['Pmu'] = Pmu
 
     print('******Sys Param Dict : Buses*******')
     for item in SysParam['Bus']:
@@ -934,6 +1060,18 @@ if __name__ == '__main__':
         print(item)
     print('******Sys Param Dict : System Stabilizers*******')
     for item in SysParam['Pss']:
+        print(item)
+    print('******Sys Param Dict : Double Fed Induction Gen*******')
+    for item in SysParam['Dfig']:
+        print(item)
+    print('******Sys Param Dict : Wind*******')
+    for item in SysParam['Wind']:
+        print(item)
+    print('******Sys Param Dict : Busfreq*******')
+    for item in SysParam['Busfreq']:
+        print(item)
+    print('******Sys Param Dict : Pmu*******')
+    for item in SysParam['Pmu']:
         print(item)
     print('******Sys Param Dict : Bus Names*******')
     for item in SysParam['BusNames']:
