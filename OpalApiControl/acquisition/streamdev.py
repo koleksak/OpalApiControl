@@ -64,7 +64,7 @@ def stream_data(groups):
 
 
 def stream_server_data():
-    """Sends acquisition data to server. Slight re-ordering is done for Bus P and Q(Must append Syn,Load P and Q)"""
+    """Constructs acquisition list for data server. Slight re-ordering is done for Bus P and Q(Must append Syn,Load P and Q)"""
     All_Acq_Data = []
     All_Acq_Data.extend(Bus_Data.returnLastAcq())
     All_Acq_Data.append(psse32.freq)
@@ -74,58 +74,42 @@ def stream_server_data():
 
     return All_Acq_Data
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def parse_stream():
-    """Parses OPAL-RT acquisition formats for groups based on PowerFlow Conditions(buses,syns,loads,etc)
-    for IDX LTB streaming"""
-
-    for businfo in range(Bus_Data):
-        if businfo < len(Bus_Data.dataValues)/2:
-            busvolt.append(Bus_Data[businfo])
-        else:
-            busang.append(Bus_Data[businfo])
-    BusIDX['V'] = busvolt
-    BusIDX['theta'] = busang
-    BusIDX['w_Busfreq'] = psse32.freq
-    #ADD P and Q With Gen and Load data
-    #BusIDX['P'] = []
-    #BusIDX['Q'] = []
-
-    step = 1
-    for syninfo in range(Syn_Data):
-        if syninfo < len(Syn_Data.dataValues)/6:
-            synang.append(Syn_Data[syninfo])
-        if (syninfo < len(Syn_Data.dataValues)*2)/6:
-            synspeed.append(Syn_Data[syninfo])
-        if syninfo < (len(Syn_Data.dataValues)*3)/6:
-            excVmag.append(Syn_Data[syninfo])
-        if syninfo < (len(Syn_Data.dataValues)*4)/6:
-            synact.append(Syn_Data[syninfo])
-        if syninfo < (len(Syn_Data.dataValues)*5)/6:
-            synreact.append(Syn_Data[syninfo])
-        if syninfo < (len(Syn_Data.dataValues)*6)/6:
-            excVref.append(Syn_Data[syninfo])
-
-    SynIDX['delta'] = synang
-    SynIDX['omega'] = synspeed
-    SynIDX['p'] = synact
-    SynIDX['q'] = synreact
-    ExcIDX['vf'] = excVref
-    ExcIDX['vm'] = excVmag
-
+#
+# def parse_stream():
+#     """Parses OPAL-RT acquisition formats for groups based on PowerFlow Conditions(buses,syns,loads,etc)
+#     for IDX LTB streaming"""
+#
+#     for businfo in range(Bus_Data):
+#         if businfo < len(Bus_Data.dataValues)/2:
+#             busvolt.append(Bus_Data[businfo])
+#         else:
+#             busang.append(Bus_Data[businfo])
+#     BusIDX['V'] = busvolt
+#     BusIDX['theta'] = busang
+#     BusIDX['w_Busfreq'] = psse32.freq
+#     #ADD P and Q With Gen and Load data
+#     #BusIDX['P'] = []
+#     #BusIDX['Q'] = []
+#
+#     step = 1
+#     for syninfo in range(Syn_Data):
+#         if syninfo < len(Syn_Data.dataValues)/6:
+#             synang.append(Syn_Data[syninfo])
+#         if (syninfo < len(Syn_Data.dataValues)*2)/6:
+#             synspeed.append(Syn_Data[syninfo])
+#         if syninfo < (len(Syn_Data.dataValues)*3)/6:
+#             excVmag.append(Syn_Data[syninfo])
+#         if syninfo < (len(Syn_Data.dataValues)*4)/6:
+#             synact.append(Syn_Data[syninfo])
+#         if syninfo < (len(Syn_Data.dataValues)*5)/6:
+#             synreact.append(Syn_Data[syninfo])
+#         if syninfo < (len(Syn_Data.dataValues)*6)/6:
+#             excVref.append(Syn_Data[syninfo])
+#
+#     SynIDX['delta'] = synang
+#     SynIDX['omega'] = synspeed
+#     SynIDX['p'] = synact
+#     SynIDX['q'] = synreact
+#     ExcIDX['vf'] = excVref
+#     ExcIDX['vm'] = excVmag
+#
