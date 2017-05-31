@@ -48,7 +48,8 @@ Tgparams = {}
 govcount = 0
 Pss = []
 Pssparams = {}
-psscount = 0
+pss1count = 0
+pss2count = 0
 Dfig = []
 Dfigparams = {}
 Wind = []
@@ -524,30 +525,31 @@ def add_dyn(model, data):
 
         param = {'bus': busidx,
                  'gen': gen_idx,
-                 'extype' : 1,  #Type 1
-                 'FCTC': data[0],  # Field Circuit Time Constant T_r
+                 'extype' : 1,  #Type 1 (PSAT TYPE II Params List)
+                 'MTC': data[0],  # Measurement Time Constant T_r
                  'Vimax': data[1], #Voltage Integrator Output Max
                  'Vimin': data[2],
-                 'Tc': data[3],  #Exciter Time Constant
-                 'Tb': data[4],
-                 'regGain': data[5],  # K_a
+                 'Tc': data[3],  #AVR Lead Time Constant Tc
+                 'Tb': data[4],  #AVR Lag
+                 'excGain': data[5],  # K_a(Exciter Gain)
+                 'regGain': EMPTY,
                  'Ta': data[6],  # Voltage regulator time constant
                  'maxregV': data[7],
                  'minregV': data[8],
                  'Kc': data[9], #Rectifier Loading factor
-                 'Kf': data[10],
-                 'Tf': data[11],
-                 '1stX': EMPTY,  #1st Pole
-                 '1st0': EMPTY,  #1st Zero
+                 'Kf': data[10],#Field Voltage Feedback Gain(Stabilizer Gain)
+                 'Tf': data[11], #Field Voltage Time Constant(Stabilizer Time Constant
+                 '1stX': data[3],  #1st Pole(REGULATOR?)
+                 '1st0': data[4],  #1st Zero(REGULATOR?)
                  '2ndX': EMPTY,
                  '2nd0': EMPTY,
-                 'MTC': EMPTY,  #Measurement Time Constant  T_e
+                 'FCTC': EMPTY,  #Field Circuit Time Constant  T_e
                  '1stCC': EMPTY,  #1st Ceiling Coefficient
                  '2ndCC': EMPTY,
                  'status': 1
                  }
-        psatlist = [gen_idx, param['extype'], param['maxregV'], param['minregV'], param['regGain'],
-                    param['1stX'], param['1st0'], param['2ndX'], param['2nd0'], param['FCTC'],
+        psatlist = [gen_idx, param['extype'], param['maxregV'], param['minregV'], param['excGain'],
+                    param['Ta'], param['Kf'], param['Tf'], EMPTY, param['FCTC'],
                     param['MTC'], param['1stCC'], param['2ndCC'], param['status']]
 
         Exc.append(psatlist)
@@ -572,31 +574,32 @@ def add_dyn(model, data):
                  'gen': gen_idx,
                  'extype': 1,  #Type 1
                  'MTC': data[0],  # Measurement Time Constant   T_r
-                 'regGain': data[1],  # Kpr
-                 'Ta': data[2],  # Lead Time Constant
-                 'Tb': data[3],  # Lag Time Constant
-                 'Tc': data[4],
+                 'excGain': data[1],  # KA
+                 'regGain': EMPTY,
+                 'Ta': data[2],  # Exciter Time Constant
+                 'Tb': data[3],  # AVR Lag Time Constant
+                 'Tc': data[4],  # AVR Lead Time Constant
                  'maxregV': data[5],
                  'minregV': data[6],
-                 'Ke': data[7],  #???Exciter Gain?
+                 'Ke': data[7],  #Field Circuit Integral Deviation
                  'FCTC': data[8],  # Field Circuit Time Constant  T_e
-                 'Kf': data[9],  #Rate Feedback Gain
-                 'Tf1': data[10],  #???
+                 'Kf': data[9],  #Rate Feedback Gain(PSAT Stabilizer Gain
+                 'Tf1': data[10],  #Stabilizer Time Constant
                  'Switch': 0,
                  'E1': data[12],  #Exciter Flux at Knee Curve(Saturation Voltage Point 1)
                  'SE_E1': data[13],  #Saturation Factor
                  'E2': data[14],
                  'SE_E2': data[15],
-                 '1stX': EMPTY,  #1st Pole
-                 '1st0': EMPTY,  #1st Zero
+                 '1stX': EMPTY,  #1st Pole(REGULATOR?)
+                 '1st0': EMPTY,  #1st Zero(REGULATOR?)
                  '2ndX': EMPTY,
                  '2nd0': EMPTY,
-                 '1stCC': EMPTY,  #1st Ceiling Coefficient
-                 '2ndCC': EMPTY,
+                 '1stCC': EMPTY,  #1st Ceiling Coefficient(PSAT Ae..COMPUTE)
+                 '2ndCC': EMPTY,  #2nd Ceiling Coefficient(PSAT Be..COMPUTE)
                  'status': 1
                  }
         psatlist = [gen_idx, param['extype'], param['maxregV'], param['minregV'], param['regGain'],
-                    param['1stX'], param['1st0'], param['2ndX'], param['2nd0'], param['FCTC'],
+                    param['Tc'], param['Tb'], param['2ndX'], param['2nd0'], param['FCTC'],
                     param['MTC'], param['1stCC'], param['2ndCC'], param['status']]
 
         Exc.append(psatlist)
@@ -619,7 +622,7 @@ def add_dyn(model, data):
 
         param = {'bus': busidx,
                  'gen': gen_idx,
-                 'extype' : 3,  #Type ST3A
+                 'extype' : 3,  #Type (Closest Brushless Type AC1A)
                  'MTC': data[0],  # Measurement Time Constant T_r
                  'Vimax': data[1], #Voltage Integrator Output Max
                  'Vimin': data[2],
@@ -651,7 +654,7 @@ def add_dyn(model, data):
                  'status': 1
                  }
         psatlist = [gen_idx, param['extype'], param['maxregV'], param['minregV'], param['regGain'],
-                    param['1stX'], param['1st0'], param['2ndX'], param['2nd0'], param['FCTC'],
+                    param['Tc'], param['Tb'], param['2ndX'], param['Ta'], param['FCTC'],
                     param['MTC'], param['1stCC'], param['2ndCC'], param['status']]
 
         Exc.append(psatlist)
@@ -743,7 +746,8 @@ def add_dyn(model, data):
         Tgparams[busidx] = param
 
     elif model == 'IEE2ST':
-        psscount += 1
+        global pss2count
+        pss2count += 1
         busidx = data[0]
         data = data[3:]
         if busidx in BusParams.keys():
@@ -760,7 +764,7 @@ def add_dyn(model, data):
         param = {'bus': busidx,
                  'gen': gen_idx,
                  'type': 1,
-                 'AVR': psscount,
+                 'AVR': pss2count,
                  'PSSmodel': 1,
                  'PSSin': 1,
                  'Vmaxsout': EMPTY,
@@ -804,8 +808,8 @@ def add_dyn(model, data):
         Pssparams[busidx] = param
 
     elif model == 'IEEEST':
-        global psscount
-        psscount += 1
+        global pss1count
+        pss1count += 1
         busidx = data[0]
         data = data[3:]
         if busidx in BusParams.keys():
@@ -822,7 +826,7 @@ def add_dyn(model, data):
         param = {'bus': busidx,
                  'gen': gen_idx,
                  'type': 0,
-                 'AVR': psscount,
+                 'AVR': pss1count,
                  'PSSmodel': 1,
                  'PSSin': 1,
                  'Vmaxsout': EMPTY,

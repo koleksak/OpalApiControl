@@ -30,7 +30,7 @@ def set_idxvgs(SysParam):
     for key in BusIDX.keys():
         print('Bus {} IDX : {}'.format(key, BusIDX[key]))
     # Start Next Index after Last Bus index
-    startidx = nBus * 4 + 2
+    startidx = nBus * 4 + 28
     nSyn = len(SysParam['Syn'])
     print('# of Syn Devices', nSyn)
     SynIDX['p'] = list(range(startidx, startidx+nSyn, 1))
