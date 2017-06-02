@@ -1088,6 +1088,10 @@ if __name__ == '__main__':
         print(item)
 
 
-    print('Call IDXVGS')
+    print('Set Idxvgs')
     idxvgs.set_idxvgs(SysParam)
 
+    print('Set Varheader')
+    idxvgs.set_varheader()
+    idxvgs.check_set_varheader()
+    idxvgs.var_idx_vgs_list()

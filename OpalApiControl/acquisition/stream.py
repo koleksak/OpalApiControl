@@ -4,10 +4,13 @@ VarIDX and VARVGS for LTB PSAT Formatted Data Streaming from ePhasorsim Running 
 """
 
 import OpalApiPy
-
+import dime
 import acquisitioncontrol
 from OpalApiControl.system import acquire
 from OpalApiControl.OpalAPIFormatting import psse32
+import logging
+from time import sleep
+
 
 Bus_Data = acquisitioncontrol.DataList(1)
 BusIDX = {}
@@ -62,6 +65,24 @@ def stream_data(groups):
     OpalApiPy.SetAcqBlockLastVal(0,1)
 
 
+def set_dime_connect(module,port):
+    """Enter module name to connect, along with the port established by dime connection."""
+    try:
+        dimec = dime(str(module), str(port))
+        dimec.cleanup()
+        dimec.start()
+        sleep(0.1)
+    except:
+        logging.warning('<dime connection not established>')
+    else:
+        logging.log('<dime connection established')
+
+def send_varhead_idxvgs():
+    """Sends Varheader and Indices to Dime server after power flow"""
+
+    #dimec.broadcast('Varheader')
+    #dimec.broadcast('Idx')
+
 
 def stream_server_data():
     """Constructs acquisition list for data server. Slight re-ordering is done for Bus P and Q(Must append Syn,Load P and Q)"""
@@ -74,42 +95,3 @@ def stream_server_data():
 
     return All_Acq_Data
 
-#
-# def parse_stream():
-#     """Parses OPAL-RT acquisition formats for groups based on PowerFlow Conditions(buses,syns,loads,etc)
-#     for IDX LTB streaming"""
-#
-#     for businfo in range(Bus_Data):
-#         if businfo < len(Bus_Data.dataValues)/2:
-#             busvolt.append(Bus_Data[businfo])
-#         else:
-#             busang.append(Bus_Data[businfo])
-#     BusIDX['V'] = busvolt
-#     BusIDX['theta'] = busang
-#     BusIDX['w_Busfreq'] = psse32.freq
-#     #ADD P and Q With Gen and Load data
-#     #BusIDX['P'] = []
-#     #BusIDX['Q'] = []
-#
-#     step = 1
-#     for syninfo in range(Syn_Data):
-#         if syninfo < len(Syn_Data.dataValues)/6:
-#             synang.append(Syn_Data[syninfo])
-#         if (syninfo < len(Syn_Data.dataValues)*2)/6:
-#             synspeed.append(Syn_Data[syninfo])
-#         if syninfo < (len(Syn_Data.dataValues)*3)/6:
-#             excVmag.append(Syn_Data[syninfo])
-#         if syninfo < (len(Syn_Data.dataValues)*4)/6:
-#             synact.append(Syn_Data[syninfo])
-#         if syninfo < (len(Syn_Data.dataValues)*5)/6:
-#             synreact.append(Syn_Data[syninfo])
-#         if syninfo < (len(Syn_Data.dataValues)*6)/6:
-#             excVref.append(Syn_Data[syninfo])
-#
-#     SynIDX['delta'] = synang
-#     SynIDX['omega'] = synspeed
-#     SynIDX['p'] = synact
-#     SynIDX['q'] = synreact
-#     ExcIDX['vf'] = excVref
-#     ExcIDX['vm'] = excVmag
-#
