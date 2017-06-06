@@ -7,13 +7,14 @@ import stream
 import idxvgs
 import logging
 
-Vgsmodidx = {}
+Vgsinfo = {}
 
 def mod_requests():
 
     if(stream.dimec.sync):
 
         dev_list = stream.dimec.get_devices.response
+        Vgsinfo['dev_list'] = dev_list
         for idx in range(1,len(dev_list)):
             dev_name = str(dev_list[idx])
             if dev_name == 'sim':
@@ -56,4 +57,33 @@ def mod_requests():
                     SysName = {}
 
                     for dev in param:
-                        SysParam = []
+                        if dev ==('Pmu' or 'Exc' or 'Pss' or 'Dfig' or 'Syn'):
+                            SysParam[dev] = dev + '.con'
+                        else:
+                            SysParam[dev] = dev + '.store'
+
+                        if dev == ('Bus' or 'Areas' or 'Regions'):
+                            SysName[dev] = dev + '.names'
+
+                    stream.dimec.send_var(dev, 'SysParam')
+                    stream.dimec.send_var(dev_name,'SysName')
+
+
+                if len(vgsvaridx) != 0:
+                    if 'location' not in Vgsinfo:
+                        if len(vgsvaridx) == 0:
+                            Vgsinfo['location'] = []
+                            Vgsinfo['var_idx'] = list(vgsvaridx)
+                            Vgsinfo['usepmu'] = list(usepmu)
+                            Vgsinfo['limitsample'] = list(limitsample)
+
+                        else:
+                            Vgsinfo['location'].append(vgsvaridx)
+                            Vgsinfo['var_idx'].append(usepmu)
+                            Vgsinfo['limitsample'].aooend(limitsample)
+
+
+                dev_name['param'] = {}
+                dev_name['vgsvaridx'] = {}
+                dev_name['usepmu'] = {}
+                dev_name['limitsample'] = {}

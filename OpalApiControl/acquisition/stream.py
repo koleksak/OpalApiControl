@@ -8,6 +8,7 @@ import dime
 import acquisitioncontrol
 from OpalApiControl.system import acquire
 from OpalApiControl.OpalAPIFormatting import psse32
+import varreqs
 import logging
 from time import sleep
 
@@ -33,7 +34,9 @@ excVref = []
 excVmag = []
 
 Load_Data = acquisitioncontrol.DataList(3)
-
+VarStore = {}
+Varvgs = {}
+global dimec
 
 def stream_data(groups):
     """Creates Bus,Generator, and Load Data Structure as well as the acquisition threads for dynamic streaming. Threads run
@@ -84,7 +87,7 @@ def send_varhead_idxvgs():
     #dimec.broadcast('Idx')
 
 
-def stream_server_data():
+def acq_data():
     """Constructs acquisition list for data server. Slight re-ordering is done for Bus P and Q(Must append Syn,Load P and Q)"""
     All_Acq_Data = []
     All_Acq_Data.extend(Bus_Data.returnLastAcq())
@@ -95,3 +98,19 @@ def stream_server_data():
 
     return All_Acq_Data
 
+def ltb_stream():
+    """Sends requested data indices for devices to the LTB server using dime"""
+
+    if len(varreqs.Vgsinfo['dev_list']) == 0:
+        logging.warning('<No Devices Requesting>')
+        return
+
+    else:
+        for dev in varreqs.Vgsinfo['dev_list']:
+            idx = varreqs.Vgsinfo[dev]['var_idx']
+            var_data = acq_data()
+            Varvgs['vars'] = var_data[idx[0]:len(idx)-1]
+            Varvgs['t'] = 0
+            Varvgs['k'] = 0
+            Varvgs['accurate'] = 0
+            dimec.send_var(dev, 'Varvgs')
