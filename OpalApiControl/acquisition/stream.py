@@ -68,10 +68,11 @@ def stream_data(groups):
     OpalApiPy.SetAcqBlockLastVal(0,1)
 
 
-def set_dime_connect(module,port):
+def set_dime_connect(dev, port):
     """Enter module name to connect, along with the port established by dime connection."""
+
     try:
-        dimec = dime(str(module), str(port))
+        dimec = dime(str(dev), str(port))
         dimec.cleanup()
         dimec.start()
         sleep(0.1)

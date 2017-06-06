@@ -8,19 +8,22 @@ import idxvgs
 import logging
 
 Vgsinfo = {}
+SysParam = {}
+SysName = {}
+
 
 def mod_requests():
 
-    if(stream.dimec.sync):
+    if stream.dimec.sync:
 
         dev_list = stream.dimec.get_devices.response
         Vgsinfo['dev_list'] = dev_list
-        for idx in range(1,len(dev_list)):
+        for idx in range(1, len(dev_list)):
             dev_name = str(dev_list[idx])
             if dev_name == 'sim':
                 continue
 
-            if(dev_name):
+            if dev_name:
                 param, vgsvaridx, usepmu, limitsample = []
 
                 try:
@@ -53,8 +56,6 @@ def mod_requests():
 
                 #Send Parameter data
                 if len(param) != 0:
-                    SysParam = {}
-                    SysName = {}
 
                     for dev in param:
                         if dev ==('Pmu' or 'Exc' or 'Pss' or 'Dfig' or 'Syn'):
@@ -65,9 +66,11 @@ def mod_requests():
                         if dev == ('Bus' or 'Areas' or 'Regions'):
                             SysName[dev] = dev + '.names'
 
-                    stream.dimec.send_var(dev, 'SysParam')
-                    stream.dimec.send_var(dev_name,'SysName')
+                    SysParam['nBus'] = len(psse32.SysParam['Bus'])
+                    SysParam['nLine'] = len(psse32.SysParam['Line'])
 
+                    stream.dimec.send_var(dev, 'SysParam')
+                    stream.dimec.send_var(dev_name, 'SysName')
 
                 if len(vgsvaridx) != 0:
                     if 'location' not in Vgsinfo:
@@ -82,8 +85,7 @@ def mod_requests():
                             Vgsinfo['var_idx'].append(usepmu)
                             Vgsinfo['limitsample'].aooend(limitsample)
 
-
-                dev_name['param'] = {}
-                dev_name['vgsvaridx'] = {}
-                dev_name['usepmu'] = {}
-                dev_name['limitsample'] = {}
+                dev_name['param'] = []
+                dev_name['vgsvaridx'] = []
+                dev_name['usepmu'] = []
+                dev_name['limitsample'] = []
