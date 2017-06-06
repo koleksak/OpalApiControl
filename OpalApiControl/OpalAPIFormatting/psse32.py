@@ -17,7 +17,7 @@ import logging
 import os
 import re
 from collections import defaultdict
-
+import stream
 import idxvgs
 
 SysParam = {}
@@ -1091,7 +1091,13 @@ if __name__ == '__main__':
     print('Set Idxvgs')
     idxvgs.set_idxvgs(SysParam)
 
+
     print('Set Varheader')
     idxvgs.set_varheader()
     idxvgs.check_set_varheader()
     idxvgs.var_idx_vgs_list()
+
+    if(stream.set_dime_connect('SE','tcp://127.0.0.1:5000/dime')):
+        stream.send_varhead_idxvgs()
+
+

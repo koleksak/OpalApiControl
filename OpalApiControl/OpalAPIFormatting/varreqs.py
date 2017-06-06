@@ -27,25 +27,25 @@ def mod_requests():
                 param, vgsvaridx, usepmu, limitsample = []
 
                 try:
-                    param = dev_name + '.param'
+                    param = Vgsinfo['dev_list'][dev_name+'.param']
 
                 except:
                     logging.error('<Param Field Error for {}>'.format(dev_name))
 
                 try:
-                    vgsvaridx = dev_name + '.vgsvaridx'
+                    vgsvaridx = Vgsinfo['dev_list'][dev_name+'.vgsvaridx']
 
                 except:
                     logging.error('<Vgsvaridx Field Error for {}>'.format(dev_name))
 
                 try:
-                    usepmu = dev_name + '.usepmu'
+                    usepmu = Vgsinfo['dev_list'][dev_name+'.usepmu']
 
                 except:
                     logging.error('<Usepmu Field Error for {}>'.format(dev_name))
 
                 try:
-                    limitsample = dev_name + '.limitsample'
+                    limitsample = Vgsinfo['dev_list'][dev_name+'.limitsample']
 
                 except:
                     logging.error('<Limitsample Field Error for {}>'.format(dev_name))
@@ -58,10 +58,10 @@ def mod_requests():
                 if len(param) != 0:
 
                     for dev in param:
-                        if dev ==('Pmu' or 'Exc' or 'Pss' or 'Dfig' or 'Syn'):
-                            SysParam[dev] = dev + '.con'
+                        if dev == ('Pmu' or 'Exc' or 'Pss' or 'Dfig' or 'Syn'):
+                            SysParam[dev+'.con'] = psse32.SysParam[dev]
                         else:
-                            SysParam[dev] = dev + '.store'
+                            SysParam[dev+'.store'] = psse32.SysParam[dev]
 
                         if dev == ('Bus' or 'Areas' or 'Regions'):
                             SysName[dev] = dev + '.names'
@@ -74,16 +74,16 @@ def mod_requests():
 
                 if len(vgsvaridx) != 0:
                     if 'location' not in Vgsinfo:
-                        if len(vgsvaridx) == 0:
-                            Vgsinfo['location'] = []
-                            Vgsinfo['var_idx'] = list(vgsvaridx)
-                            Vgsinfo['usepmu'] = list(usepmu)
-                            Vgsinfo['limitsample'] = list(limitsample)
+                        Vgsinfo['location'] = []
+                        Vgsinfo['var_idx'] = list(vgsvaridx)
+                        Vgsinfo['usepmu'] = list(usepmu)
+                        Vgsinfo['limitsample'] = list(limitsample)
 
-                        else:
-                            Vgsinfo['location'].append(vgsvaridx)
-                            Vgsinfo['var_idx'].append(usepmu)
-                            Vgsinfo['limitsample'].aooend(limitsample)
+                    else:
+                        Vgsinfo['dev_list'].append(dev_list)
+                        Vgsinfo['location'].append(vgsvaridx)
+                        Vgsinfo['var_idx'].append(usepmu)
+                        Vgsinfo['limitsample'].aooend(limitsample)
 
                 dev_name['param'] = []
                 dev_name['vgsvaridx'] = []

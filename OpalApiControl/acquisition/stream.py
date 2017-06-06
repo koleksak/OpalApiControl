@@ -65,27 +65,21 @@ def stream_data(groups):
     #if 4 in groups:
     #    line_set.start()
     acquire.connectToModel('ephasorFormat1','phasor01_IEEE39')
-    OpalApiPy.SetAcqBlockLastVal(0,1)
+    OpalApiPy.SetAcqBlockLastVal(0, 1)
 
 
 def set_dime_connect(dev, port):
     """Enter module name to connect, along with the port established by dime connection."""
 
-    try:
-        dimec = dime(str(dev), str(port))
-        dimec.cleanup()
-        dimec.start()
-        sleep(0.1)
-    except:
-        logging.warning('<dime connection not established>')
-    else:
-        logging.log('<dime connection established')
-
-def send_varhead_idxvgs():
-    """Sends Varheader and Indices to Dime server after power flow"""
-
-    #dimec.broadcast('Varheader')
-    #dimec.broadcast('Idx')
+    #try:
+    dimec = dime.Dime(dev, port)
+    dimec.cleanup()
+    dimec.start()
+    sleep(0.1)
+    #except:
+    #    logging.warning('<dime connection not established>')
+    #else:
+    #    logging.log('<dime connection established>')
 
 
 def acq_data():
