@@ -88,60 +88,6 @@ class DataList:
                 dynSig +=1
 
 
-# acqDir = []
-# acqList = 0
-class simulationTimeThread(threading.Thread):
-    # Use of the simulation time thread requires that calls for time differences are equal to
-    # or greater than the simulation sample/sec as specified in the model's OpComm Block.
-    # This thread is used to compare time differences at a specified interval when a simulation clock
-    # is added to the main model in RT-Lab. Primary use of this function is in the
-    # acquisitionThreadReturnWithTime object thread, for setting acquisition return intervals
-
-    def __init__(self,project,model,interval):
-        """Interval must be greater or equal to model simulation sample/sec"""
-        threading.Thread.__init__(self)
-        self.project = str(project)
-        self.model = str(model)
-        self.interval = interval
-        threadName = 'SimulationClock Thread'
-        self.threadName = threadName
-        lock = threading.Lock()
-        projectPath = 0
-        modelName = 0
-        self.projectPath = projectPath
-        self.modelName = modelName
-        self.lock = lock
-
-        simulationClock = 0
-        self.simulationClock = simulationClock
-
-    def run(self):
-        #Each thread must connect itself to the model through the acquire module
-        acquire.connectToModel(self.project, self.model)
-        self.projectPath, self.modelName = OpalApiPy.GetCurrentModel()
-        modelName = os.path.splitext(self.modelName)
-
-        #This is the default clock path as long as the user adds a clock to the sm_master for
-        #time keeping if asynchronous data acquisition is needed.
-        clockpath = modelName[0] + '/sm_master/clock/port1'
-        modelState, realTimeFactor = OpalApiPy.GetModelState()
-        while (modelState == OpalApiPy.MODEL_RUNNING):
-            # Thread continues to get time until model is paused or stoped
-            #Blocks GetSignalsByName process from other threads until time thread is done
-            self.lock.acquire()
-            self.simulationClock = OpalApiPy.GetSignalsByName(clockpath)
-            # print"Simulation Time is %s" % self.simulationClock
-            self.lock.release()
-            modelState, realTimeFactor = OpalApiPy.GetModelState()
-            sleep(self.interval)
-
-        #Each thread must also disconnect from the API after its work has finished.
-        OpalApiPy.Disconnect()
-        print"Thread- " + self.threadName + " Exited"
-
-
-
-
 class StartAcquisitionThread(threading.Thread,DataList):
     def __init__(self,project,model,dataList,GroupNumber,threadName,interval):
         threading.Thread.__init__(self)
@@ -355,6 +301,58 @@ class acquisitionThreadReturnWithTime(threading.Thread):         #REMOVE
         OpalApiPy.Disconnect()
         print"Thread- " + self.threadName + " Exited"
 
+
+# acqDir = []
+# acqList = 0
+###CAN POSSIBLY REMOVE BELOW
+class simulationTimeThread(threading.Thread):
+    # Use of the simulation time thread requires that calls for time differences are equal to
+    # or greater than the simulation sample/sec as specified in the model's OpComm Block.
+    # This thread is used to compare time differences at a specified interval when a simulation clock
+    # is added to the main model in RT-Lab. Primary use of this function is in the
+    # acquisitionThreadReturnWithTime object thread, for setting acquisition return intervals
+
+    def __init__(self,project,model,interval):
+        """Interval must be greater or equal to model simulation sample/sec"""
+        threading.Thread.__init__(self)
+        self.project = str(project)
+        self.model = str(model)
+        self.interval = interval
+        threadName = 'SimulationClock Thread'
+        self.threadName = threadName
+        lock = threading.Lock()
+        projectPath = 0
+        modelName = 0
+        self.projectPath = projectPath
+        self.modelName = modelName
+        self.lock = lock
+
+        simulationClock = 0
+        self.simulationClock = simulationClock
+
+    def run(self):
+        #Each thread must connect itself to the model through the acquire module
+        acquire.connectToModel(self.project, self.model)
+        self.projectPath, self.modelName = OpalApiPy.GetCurrentModel()
+        modelName = os.path.splitext(self.modelName)
+
+        #This is the default clock path as long as the user adds a clock to the sm_master for
+        #time keeping if asynchronous data acquisition is needed.
+        clockpath = modelName[0] + '/sm_master/clock/port1'
+        modelState, realTimeFactor = OpalApiPy.GetModelState()
+        while (modelState == OpalApiPy.MODEL_RUNNING):
+            # Thread continues to get time until model is paused or stoped
+            #Blocks GetSignalsByName process from other threads until time thread is done
+            self.lock.acquire()
+            self.simulationClock = OpalApiPy.GetSignalsByName(clockpath)
+            # print"Simulation Time is %s" % self.simulationClock
+            self.lock.release()
+            modelState, realTimeFactor = OpalApiPy.GetModelState()
+            sleep(self.interval)
+
+        #Each thread must also disconnect from the API after its work has finished.
+        OpalApiPy.Disconnect()
+        print"Thread- " + self.threadName + " Exited"
 
 
 def getSyncClockPath(project,model):   #ADDED To acquisition thread class CAN POSSIBLY REMOVE

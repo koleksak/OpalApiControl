@@ -27,25 +27,25 @@ def mod_requests():
                 param, vgsvaridx, usepmu, limitsample = []
 
                 try:
-                    param = Vgsinfo['dev_list'][dev_name+'.param']
+                    param = Vgsinfo['dev_list'][dev_name]['param']
 
                 except:
                     logging.error('<Param Field Error for {}>'.format(dev_name))
 
                 try:
-                    vgsvaridx = Vgsinfo['dev_list'][dev_name+'.vgsvaridx']
+                    vgsvaridx = Vgsinfo['dev_list'][dev_name][vgsvaridx]
 
                 except:
                     logging.error('<Vgsvaridx Field Error for {}>'.format(dev_name))
 
                 try:
-                    usepmu = Vgsinfo['dev_list'][dev_name+'.usepmu']
+                    usepmu = Vgsinfo['dev_list'][dev_name][usepmu]
 
                 except:
                     logging.error('<Usepmu Field Error for {}>'.format(dev_name))
 
                 try:
-                    limitsample = Vgsinfo['dev_list'][dev_name+'.limitsample']
+                    limitsample = Vgsinfo['dev_list'][dev_name][limitsample]
 
                 except:
                     logging.error('<Limitsample Field Error for {}>'.format(dev_name))
@@ -59,9 +59,9 @@ def mod_requests():
 
                     for dev in param:
                         if dev == ('Pmu' or 'Exc' or 'Pss' or 'Dfig' or 'Syn'):
-                            SysParam[dev+'.con'] = psse32.SysParam[dev]
+                            SysParam[dev]= psse32.SysParam[dev]
                         else:
-                            SysParam[dev+'.store'] = psse32.SysParam[dev]
+                            SysParam[dev] = psse32.SysParam[dev]
 
                         if dev == ('Bus' or 'Areas' or 'Regions'):
                             SysName[dev] = dev + '.names'

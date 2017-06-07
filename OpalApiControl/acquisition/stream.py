@@ -4,12 +4,13 @@ VarIDX and VARVGS for LTB PSAT Formatted Data Streaming from ePhasorsim Running 
 """
 
 import OpalApiPy
-import dime
+from dime import dime
 import acquisitioncontrol
 from OpalApiControl.system import acquire
 from OpalApiControl.OpalAPIFormatting import psse32
 import varreqs
 import logging
+import time
 from time import sleep
 
 
@@ -37,6 +38,8 @@ Load_Data = acquisitioncontrol.DataList(3)
 VarStore = {}
 Varvgs = {}
 global dimec
+global start_time
+global bus_set
 
 def stream_data(groups):
     """Creates Bus,Generator, and Load Data Structure as well as the acquisition threads for dynamic streaming. Threads run
@@ -46,16 +49,16 @@ def stream_data(groups):
      groups = (group# tuple, in ascending order)"""
     if 1 in groups:
         bus_set = acquisitioncontrol.StartAcquisitionThread('ephasorFormat1', 'phasor01_IEEE39', Bus_Data, groups[0],
-                                                       "Bus Data Thread Set", 1)
+                                                       "Bus Data Thread Set", 0.33)
     if 2 in groups:
         syn_set = acquisitioncontrol.StartAcquisitionThread('ephasorFormat1', 'phasor01_IEEE39', Syn_Data, groups[1],
-                                                       "Generator Data Thread Set", 1)
+                                                       "Generator Data Thread Set", 0.33)
     if 3 in groups:
         load_set = acquisitioncontrol.StartAcquisitionThread('ephasorFormat1', 'phasor01_IEEE39', Load_Data, groups[2],
-                                                       "Load Data Thread Set", 1)
+                                                       "Load Data Thread Set", 0.33)
     if 4 in groups:
         line_set = acquisitioncontrol.StartAcquisitionThread('ephasorFormat1', 'phasor01_IEEE39', Load_Data, groups[3],
-                                                         "Load Data Thread Set", 1)
+                                                         "Load Data Thread Set", 0.33)
     if 1 in groups:
         bus_set.start()
     if 2 in groups:
@@ -66,6 +69,7 @@ def stream_data(groups):
     #    line_set.start()
     acquire.connectToModel('ephasorFormat1','phasor01_IEEE39')
     OpalApiPy.SetAcqBlockLastVal(0, 1)
+    start_time = bus_set.simulationTime
 
 
 def set_dime_connect(dev, port):
@@ -73,7 +77,7 @@ def set_dime_connect(dev, port):
 
     #try:
     dimec = dime.Dime(dev, port)
-    dimec.cleanup()
+    #dimec.cleanup()
     dimec.start()
     sleep(0.1)
     #except:
@@ -101,11 +105,14 @@ def ltb_stream():
         return
 
     else:
+        acq_time = time.time()
         for dev in varreqs.Vgsinfo['dev_list']:
             idx = varreqs.Vgsinfo[dev]['var_idx']
             var_data = acq_data()
-            Varvgs['vars'] = var_data[idx[0]:len(idx)-1]
-            Varvgs['t'] = 0
-            Varvgs['k'] = 0
-            Varvgs['accurate'] = 0
+            Varvgs['vars'] = var_data[idx[0]:len(idx)-1]            #Need to add modified data
+            Varvgs['accurate'] = var_data[idx[0]:len(idx)-1]        #Accurate streaming data
+            Varvgs['t'] = bus_set.simulationTime-start_time
+            print('Time', Varvgs['t'])
+            Varvgs['k'] = bus_set.simulationTime/30
+            print('Steps', Varvgs['k'])
             dimec.send_var(dev, 'Varvgs')
