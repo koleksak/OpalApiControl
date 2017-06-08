@@ -21,8 +21,44 @@ Varheader = []
 idx_vgs_order = ['Bus', 'Syn', 'Exc', 'Line', 'Tg']
 state_order = ['w_Busfreq', 'delta', 'omega','pm', 'wref', 'vf', 'vm']
 alg_order = ['theta', 'V', 'P', 'Q', 'p', 'q', 'Pij', 'Pji', 'Qij', 'Qji', 'Iij', 'Iji', 'Sij', 'Sji']
+BusPar = ['V', 'theta', 'P', 'Q', 'w_Busfreq']
+SynPar = ['p', 'q', 'delta', 'omega']
+ExcPar = ['vf', 'vm']
+LinePar = ['Pij', 'Pji', 'Qij', 'Qji', 'Iij', 'Iji', 'Sij', 'Sji']
+TgPar = ['pm', 'wref']
 
-def set_idxvgs(SysParam):
+def set_idxvgs_gen_helper(SysParam):
+    """Generates IDX matrix with elements to ease Idxvgs creation. Follows Variable name orders
+    defined in (Device)Par lists."""
+
+    nBus = len((SysParam['Bus']))
+    for item in BusPar:
+        BusIDX[item] = range(0, nBus, 1)
+    Idx['Bus'] = BusIDX
+
+    nSyn = len(SysParam['Syn'])
+    for item in SynPar:
+        SynIDX[item] = range(0, nSyn, 1)
+    Idx['Syn'] = SynIDX
+
+    for item in ExcPar:
+        ExcIDX[item] = range(0, nSyn, 1)
+    Idx['Exc'] = ExcIDX
+
+    nLine = len(SysParam['Line'])
+    for item in LinePar:
+        LineIDX[item] = range(0, nLine, 1)
+    Idx['Line'] = LineIDX
+
+    nTg = len(SysParam['Tg'])
+    for item in TgPar:
+        TgIDX[item] = range(0, nTg, 1)
+    Idx['Tg'] = TgIDX
+
+    #ADD WIND MODELS if nec
+
+
+def set_idxvgs(SysParam):  ###REPLACED WITH set_idx_gen_helper()
     """Parses OPAL-RT acquisition formats for groups based on PowerFlow Conditions(buses,syns,loads,etc)
     for IDX LTB streaming"""
 
@@ -126,12 +162,13 @@ def idx_choose_order():
 
 def set_varheader():
     """Creates Variable Names for varidx indices"""
-    print('Idxvgs', Idxvgs)
+    #print('Idxvgs', Idxvgs)
     for device in idx_vgs_order:
         for var in state_order:
             if var in Idxvgs[device].keys():
                 for i in range(1, len(Idxvgs[device][var])+1):
                     Varheader.append(var+'_'+str(i))
+
     for device in idx_vgs_order:
         for var in alg_order:
             if var in Idxvgs[device].keys():

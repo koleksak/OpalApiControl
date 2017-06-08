@@ -1090,12 +1090,12 @@ if __name__ == '__main__':
 
 
     print('Set Idxvgs')
-    idxvgs.set_idxvgs(SysParam)
+    idxvgs.set_idxvgs_gen_helper(SysParam)
     idxvgs.idx_choose_order()
 
     print('Set Varheader')
     idxvgs.set_varheader()
-    idxvgs.check_set_varheader()
+    #idxvgs.check_set_varheader()
     idxvgs.var_idx_vgs_list()
 
     #if(stream.set_dime_connect('SE','tcp://127.0.0.1:5000/dime')):
