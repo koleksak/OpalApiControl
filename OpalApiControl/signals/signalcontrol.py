@@ -8,9 +8,9 @@
 #***************************************************************************************
 # Modules
 #***************************************************************************************
-from OpalApiControl.config import *
-# import OpalApiControl.system
-# from OpalApiControl.system import acquire
+
+from OpalApiControl.system import acquire
+import OpalApiPy
 import collections
 #***************************************************************************************
 # Globals

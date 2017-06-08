@@ -1,6 +1,7 @@
 # This sets data into a data list, and retrieves the data after every entry depending on the model sampling rate.
-from OpalApiControl.config import *
+from OpalApiControl.acquisition import acquisitioncontrol
 import csv
+from time import sleep
 print("in File threadTest1")
 if __name__ == '__main__':
     print("running file ThreadTest1")

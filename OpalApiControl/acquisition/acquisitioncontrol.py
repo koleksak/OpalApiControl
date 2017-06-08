@@ -11,11 +11,14 @@
 #***************************************************************************************
 # Modules
 #***************************************************************************************
-from OpalApiControl.config import *
+from OpalApiControl.system import acquire
+import os
+import OpalApiPy
 import threading
 import multiprocessing
 from time import sleep
 import logging
+
 
 
 #***************************************************************************************

@@ -1,4 +1,5 @@
-from OpalApiControl.config import *
+from OpalApiControl.acquisition import acquisitioncontrol
+import threading
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
 import csv

@@ -1,6 +1,6 @@
-from OpalApiControl.config import *
-from acquisition import stream
-import csv
+from OpalApiControl.system import acquire
+from OpalApiControl.OpalApiFormat import stream
+from time import sleep
 
 if __name__ == '__main__':
     print("running file streamTest1")
