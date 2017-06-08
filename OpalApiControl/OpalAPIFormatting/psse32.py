@@ -1008,7 +1008,7 @@ if __name__ == '__main__':
     project = 'ephasorFormat1'
     rawfile = 'Curent02_final'
     dyrfile = 'Curent02_final_Wind'
-    projectPath = 'C:/Users/Kellen/OPAL-RT/RT-LABv11_Workspace/'
+    projectPath = 'C:\Users\opalrt\RT-LABv11_Workspace'
     projectName = os.path.join(projectPath, str(project) + '/')
     filePath = os.path.join(projectName, 'simulink/')
     powfile = os.path.join(filePath, rawfile + '.raw')
