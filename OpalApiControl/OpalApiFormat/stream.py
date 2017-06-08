@@ -5,9 +5,9 @@ VarIDX and VARVGS for LTB PSAT Formatted Data Streaming from ePhasorsim Running 
 
 import OpalApiPy
 from dime import dime
-import acquisitioncontrol
+from OpalApiControl.acquisition import acquisitioncontrol
 from OpalApiControl.system import acquire
-from OpalApiControl.OpalAPIFormatting import psse32
+import psse32
 import varreqs
 import logging
 import time
