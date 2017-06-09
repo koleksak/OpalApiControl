@@ -1014,7 +1014,7 @@ if __name__ == '__main__':
     #rawfile = 'IEEE39'
     #dyrfile = 'IEEE39'
 
-    projectPath = 'C:/Users/Kellen/OPAL-RT/RT-LABv11_Workspace/'
+    projectPath = 'C:/RT-LABv11_Workspace/'
     projectName = os.path.join(projectPath, str(project) + '/')
     filePath = os.path.join(projectName, 'simulink/')
     powfile = os.path.join(filePath, rawfile + '.raw')
