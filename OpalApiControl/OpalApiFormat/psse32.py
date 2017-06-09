@@ -154,7 +154,7 @@ def read(file):
                  'angle': angle,
                  }
 
-        psatlist = [data[0], data[2], data[8], angle, data[4], data[5]]
+        psatlist = [data[0], data[2], data[7], angle, data[4], data[5]]
         Bus.append(psatlist)
         BusParams[data[0]] = param
         BusNames.append(data[1])
@@ -304,6 +304,8 @@ def read(file):
                  'x': data[4],
                  'b': data[5],
                  'rate_a': data[6],
+                 'rate_b': data[7],
+                 'rate_c': data[8],
                  'Vn': BusParams[data[0]]['Vn'],
                  'Vn2': BusParams[data[1]]['Vn'],
                  'length' : data[14],
@@ -313,7 +315,7 @@ def read(file):
                  'status' : data[13]
                  }
 
-        psatlist = [param['bus1'], param['bus2'], param['rate_a'], param['Vn'], freq, EMPTY,
+        psatlist = [param['bus1'], param['bus2'], param['rate_c'], param['Vn'], freq, EMPTY,
                     param['length'], param['r'], param['x'], param['b'], param['Ilim'], param['Plim'], EMPTY, EMPTY,
                     param['Slim'], param['status']]
 
@@ -1009,6 +1011,9 @@ if __name__ == '__main__':
     project = 'ephasorFormat1'
     rawfile = 'Curent02_final'
     dyrfile = 'Curent02_final_Wind'
+    #rawfile = 'IEEE39'
+    #dyrfile = 'IEEE39'
+
     projectPath = 'C:/Users/Kellen/OPAL-RT/RT-LABv11_Workspace/'
     projectName = os.path.join(projectPath, str(project) + '/')
     filePath = os.path.join(projectName, 'simulink/')
@@ -1016,7 +1021,7 @@ if __name__ == '__main__':
     dynfile = os.path.join(filePath,dyrfile + '.dyr')
 
     read(powfile)
-    readadd(dynfile)
+    #readadd(dynfile)
     SysParam['Syn'] = Syn
     SysParam['Exc'] = Exc
     SysParam['Tg'] = Tg
@@ -1029,7 +1034,7 @@ if __name__ == '__main__':
         Busfreq.append(data)
     SysParam['Busfreq'] = Busfreq
 
-    for bus in range(0,len(SysParam['Bus'])):
+    for bus in range(0, len(SysParam['Bus'])-1):
         data = [bus+2, BusParams[bus+2]['Vn'], 60, 0.05, 0.05, 1, 30, 2, 0]
         Pmu.append(data)
     SysParam['Pmu'] = Pmu
@@ -1050,6 +1055,7 @@ if __name__ == '__main__':
     for item in SysParam['PV']:
         print(item)
     print('******Sys Param Dict : Lines*******')
+    print('Number of lines', len(SysParam['Line']))
     for item in SysParam['Line']:
         print(item)
     print('******Sys Param Dict : Shunt*******')
@@ -1095,7 +1101,7 @@ if __name__ == '__main__':
 
     print('Set Varheader')
     idxvgs.set_varheader()
-    #idxvgs.check_set_varheader()
+    idxvgs.check_set_varheader()
     idxvgs.var_idx_vgs_list()
 
     #if(stream.set_dime_connect('SE','tcp://127.0.0.1:5000/dime')):
