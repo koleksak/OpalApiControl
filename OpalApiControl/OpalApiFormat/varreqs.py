@@ -5,86 +5,117 @@ import psse32
 import stream
 import idxvgs
 import logging
+import json
+import unicodedata
+from pymatbridge import Matlab
 
 Vgsinfo = {}
+Vgsinfo['dev_list'] = {}
 SysParam = {}
 SysName = {}
-
+prereq = 'sim'
 
 def mod_requests():
+    varname = stream.dimec.sync()
+    if varname:
+        modules = stream.dimec.workspace
+        #modules = json.loads(modules)
+        global Vgsinfo
+        Vgsinfo['dev_list'] = modules
+        #print('MODULES'.format(modules))
+        #print('Vgsinfo', Vgsinfo)
+        if prereq not in Vgsinfo['dev_list'].keys():
+            print prereq
+            logging.error('<No simulator connected>')
 
-    if stream.dimec.sync:
+        else:
+            for dev_name in stream.dimec.workspace:
+                if dev_name == 'sim':
+                    continue
+                jsonmods = Vgsinfo['dev_list'][dev_name]
+                mods = json.loads(jsonmods)
+                Vgsinfo['dev_list'][dev_name] = mods
 
-        dev_list = stream.dimec.get_devices.response
-        Vgsinfo['dev_list'] = dev_list
-        for idx in range(1, len(dev_list)):
-            dev_name = str(dev_list[idx])
-            if dev_name == 'sim':
-                continue
+                if dev_name:
+                    param, vgsvaridx, usepmu, limitsample = ([], [], [], [])
 
-            if dev_name:
-                param, vgsvaridx, usepmu, limitsample = []
+                    try:
+                        param = Vgsinfo['dev_list'][dev_name]['param']
 
-                try:
-                    param = Vgsinfo['dev_list'][dev_name]['param']
 
-                except:
-                    logging.error('<Param Field Error for {}>'.format(dev_name))
+                    except:
+                        logging.error('<Param Field Error for {}>'.format(dev_name))
 
-                try:
-                    vgsvaridx = Vgsinfo['dev_list'][dev_name][vgsvaridx]
+                    try:
+                        vgsvaridx = Vgsinfo['dev_list'][dev_name]['vgsvaridx']
 
-                except:
-                    logging.error('<Vgsvaridx Field Error for {}>'.format(dev_name))
+                    except:
+                        logging.error('<Vgsvaridx Field Error for {}>'.format(dev_name))
 
-                try:
-                    usepmu = Vgsinfo['dev_list'][dev_name][usepmu]
+                    try:
+                        usepmu = Vgsinfo['dev_list'][dev_name]['usepmu']
 
-                except:
-                    logging.error('<Usepmu Field Error for {}>'.format(dev_name))
+                    except:
+                        logging.error('<Usepmu Field Error for {}>'.format(dev_name))
 
-                try:
-                    limitsample = Vgsinfo['dev_list'][dev_name][limitsample]
+                    try:
+                        limitsample = Vgsinfo['dev_list'][dev_name]['limitsample']
 
-                except:
-                    logging.error('<Limitsample Field Error for {}>'.format(dev_name))
+                    except:
+                        logging.error('<Limitsample Field Error for {}>'.format(dev_name))
 
-                if (len(param) & len(vgsvaridx)) == 0:
-                    logging.error('<No Param and Var data requested')
-                    break
+                    if (len(param) == 0) & (len(vgsvaridx) == 0):
+                        logging.error('<No Param and Var data requested')
+                        break
 
-                #Send Parameter data
-                if len(param) != 0:
+                    #Send Parameter data
+                    if len(param) != 0:
+                        for dev in param:
 
-                    for dev in param:
-                        if dev == ('Pmu' or 'Exc' or 'Pss' or 'Dfig' or 'Syn'):
-                            SysParam[dev]= psse32.SysParam[dev]
+                            #print param
+                            if dev == ('Pmu' or 'Exc' or 'Pss' or 'Dfig' or 'Syn'):
+                                SysParam[dev] = Vgsinfo['dev_list']['sim']['SysParam'][dev]
+                            else:
+                                SysParam[dev] = Vgsinfo['dev_list']['sim']['SysParam'][dev]
+
+                            if dev == ('Bus' or 'Areas' or 'Regions'):
+                                SysName[dev] = Vgsinfo['dev_list']['sim']['SysParam'][dev]
+
+                        SysParam['nBus'] = len(Vgsinfo['dev_list']['sim']['SysParam']['Bus'])
+                        SysParam['nLine'] = len(Vgsinfo['dev_list']['sim']['SysParam']['Line'])
+                        JsonSysParam = json.dumps(SysParam)
+                        JsonSysName = json.dumps(SysName)
+                        stream.dimec.send_var(dev_name, 'SysParam', JsonSysParam)
+                        stream.dimec.send_var(dev_name, 'SysName', JsonSysName)
+                        print('Sent SysParam and SysName to {}'.format(dev_name))
+
+                    if len(vgsvaridx) != 0:
+                        if 'location' not in Vgsinfo:
+                            Vgsinfo[dev_name] = {}
+                            print('Create vgs dev', Vgsinfo)
+                            Vgsinfo['dev_list'][dev_name]['location'] = []
+                            Vgsinfo['dev_list'][dev_name]['vgsvaridx'] = vgsvaridx
+                            Vgsinfo['dev_list'][dev_name]['usepmu'] = usepmu
+                            Vgsinfo['dev_list'][dev_name]['limitsample'] = limitsample
+
                         else:
-                            SysParam[dev] = psse32.SysParam[dev]
+                            Vgsinfo['dev_list'].append(dev_name)
+                            #Vgsinfo[dev_name]['location'].append(vgsvaridx)
+                            Vgsinfo['dev_list'][dev_name]['vgsvaridx'].append(vgsvaridx)
+                            Vgsinfo['dev_list'][dev_name]['usepmu'] = usepmu
+                            Vgsinfo['dev_list'][dev_name]['limitsample'].append(limitsample)
 
-                        if dev == ('Bus' or 'Areas' or 'Regions'):
-                            SysName[dev] = dev + '.names'
+                    #Vgsinfo[dev_name]['param'] = []
+                    #Vgsinfo[dev_name]['vgsvaridx'] = []
+                    #Vgsinfo[dev_name]['usepmu'] = []
+                    #Vgsinfo[dev_name]['limitsample'] = []
+    return Vgsinfo
 
-                    SysParam['nBus'] = len(psse32.SysParam['Bus'])
-                    SysParam['nLine'] = len(psse32.SysParam['Line'])
+def obj_to_dict_helper(objects):
+    """Strips unicode formatting from JSON objects to convert to Python ascii Dictionary"""
+    dict_names_list = []
+    for obj in objects:
+        obj = unicodedata.normalize('NFKD', obj).encode('ascii', 'ignore')
+        dict_names_list.append(obj)
+    return dict_names_list
 
-                    stream.dimec.send_var(dev, 'SysParam')
-                    stream.dimec.send_var(dev_name, 'SysName')
-
-                if len(vgsvaridx) != 0:
-                    if 'location' not in Vgsinfo:
-                        Vgsinfo['location'] = []
-                        Vgsinfo['var_idx'] = list(vgsvaridx)
-                        Vgsinfo['usepmu'] = list(usepmu)
-                        Vgsinfo['limitsample'] = list(limitsample)
-
-                    else:
-                        Vgsinfo['dev_list'].append(dev_list)
-                        Vgsinfo['location'].append(vgsvaridx)
-                        Vgsinfo['var_idx'].append(usepmu)
-                        Vgsinfo['limitsample'].aooend(limitsample)
-
-                dev_name['param'] = []
-                dev_name['vgsvaridx'] = []
-                dev_name['usepmu'] = []
-                dev_name['limitsample'] = []

@@ -6,6 +6,7 @@ VarIDX for LTB PSAT Formatted Data Streaming from ePhasorsim Models
 import psse32
 import dime
 import stream
+import json
 
 Idx = {}
 Idxvgs = {}
@@ -15,6 +16,7 @@ ExcIDX = {}
 LineIDX = {}
 TgIDX = {}
 HvdcIDX = {}
+global Varheader
 Varheader = []
 #var_keys_order = ['w_Busfreq', 'delta', 'omega','pm', 'wref', 'vf', 'vm',
 #    'theta', 'V', 'P', 'Q', 'p', 'q', 'Pij', 'Pji', 'Qij', 'Qji', 'Iij', 'Iji', 'Sij', 'Sji']
@@ -155,7 +157,7 @@ def idx_choose_order():
                 Idxvgs[device][var] = list(range(startidx, endidx, 1))
                 startidx = endidx
 
-    #print('Idxvgs', Idxvgs)
+    return Idxvgs
 
 
 
@@ -174,7 +176,7 @@ def set_varheader():
             if var in Idxvgs[device].keys():
                 for i in range(1, len(Idxvgs[device][var])+1):
                     Varheader.append(var+'_'+str(i))
-
+    return Varheader
 
 def check_set_varheader():
     print Varheader
@@ -183,8 +185,9 @@ def var_idx_vgs_list():
     for count in range(0, len(Varheader)):
         print('Var: {}  Idx: {} '.format(Varheader[count], count+1))
 
-def send_varhead_idxvgs():
+def send_varhead_idxvgs(dev, dimec, Varheader):
     """Sends Varheader and Indices to Dime server after power flow"""
-
-    stream.dimec.broadcast('Varheader')
-    stream.dimec.broadcast('Idx')
+    JsonVarheader = json.dumps(Varheader)
+    JsonIdx = json.dumps(Idx)
+    dimec.send_var(dev, 'sim', JsonVarheader)
+    dimec.send_var(dev, 'sim', JsonIdx)

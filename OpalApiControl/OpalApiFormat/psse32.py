@@ -5,6 +5,7 @@ import re
 from collections import defaultdict
 import idxvgs
 import stream
+import varreqs
 
 NEVER = 60
 CRITICAL = 50
@@ -1021,7 +1022,7 @@ if __name__ == '__main__':
     dynfile = os.path.join(filePath,dyrfile + '.dyr')
 
     read(powfile)
-    #readadd(dynfile)
+    readadd(dynfile)
     SysParam['Syn'] = Syn
     SysParam['Exc'] = Exc
     SysParam['Tg'] = Tg
@@ -1097,14 +1098,11 @@ if __name__ == '__main__':
 
     print('Set Idxvgs')
     idxvgs.set_idxvgs_gen_helper(SysParam)
-    idxvgs.idx_choose_order()
+    Idxvgs = idxvgs.idx_choose_order()
 
     print('Set Varheader')
-    idxvgs.set_varheader()
-    idxvgs.check_set_varheader()
-    idxvgs.var_idx_vgs_list()
+    Varheader = idxvgs.set_varheader()
+    stream.ltb_stream_sim(SysParam, Varheader, Idxvgs)
 
-    #if(stream.set_dime_connect('SE','tcp://127.0.0.1:5000/dime')):
-    #    stream.send_varhead_idxvgs()
 
 

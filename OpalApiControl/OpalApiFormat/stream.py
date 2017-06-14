@@ -4,6 +4,7 @@ VarIDX and VARVGS for LTB PSAT Formatted Data Streaming from ePhasorsim Running 
 """
 
 import OpalApiPy
+import dime
 from dime import dime
 from OpalApiControl.acquisition import acquisitioncontrol
 from OpalApiControl.system import acquire
@@ -12,6 +13,11 @@ import varreqs
 import logging
 import time
 from time import sleep
+import json
+import idxvgs
+from pymatbridge import Matlab
+import stream
+import threading
 
 
 Bus_Data = acquisitioncontrol.DataList(1)
@@ -75,16 +81,21 @@ def stream_data(groups):
 def set_dime_connect(dev, port):
     """Enter module name to connect, along with the port established by dime connection."""
 
-    #try:
-    dimec = dime.Dime(dev, port)
-    #dimec.cleanup()
-    dimec.start()
-    sleep(0.1)
-    #except:
-    #    logging.warning('<dime connection not established>')
-    #else:
-    #    logging.log('<dime connection established>')
+    try:
+        global dimec
+        dimec = dime.Dime(dev, port)
+        #dimec.cleanup()
+        dimec.start()
+        #dimec.exit()
+        sleep(0.1)
+        #dimec.exit()
+    except:
+        logging.warning('<dime connection not established>')
+        #return False
+    else:
 
+        logging.info('<dime connection established>')
+        return dimec
 
 def acq_data():
     """Constructs acquisition list for data server. Slight re-ordering is done for Bus P and Q(Must append Syn,Load P and Q)"""
@@ -97,22 +108,48 @@ def acq_data():
 
     return All_Acq_Data
 
-def ltb_stream():
+def ltb_stream(Vgsinfo):
     """Sends requested data indices for devices to the LTB server using dime"""
 
-    if len(varreqs.Vgsinfo['dev_list']) == 0:
+    if Vgsinfo == None:
         logging.warning('<No Devices Requesting>')
-        return
+        return False
 
     else:
         acq_time = time.time()
-        for dev in varreqs.Vgsinfo['dev_list']:
-            idx = varreqs.Vgsinfo[dev]['var_idx']
-            var_data = acq_data()
-            Varvgs['vars'] = var_data[idx[0]:len(idx)-1]            #Need to add modified data
-            Varvgs['accurate'] = var_data[idx[0]:len(idx)-1]        #Accurate streaming data
-            Varvgs['t'] = bus_set.simulationTime-start_time
-            print('Time', Varvgs['t'])
-            Varvgs['k'] = bus_set.simulationTime/30
-            print('Steps', Varvgs['k'])
-            dimec.send_var(dev, 'Varvgs')
+        for dev in varreqs.Vgsinfo['dev_list'].keys():
+            if dev == 'sim':
+                continue
+            idx = varreqs.Vgsinfo['dev_list'][dev]['vgsvaridx']
+            try:
+                var_data = acq_data()
+            except:
+                logging.error('<No simulation data available>')
+            else:
+                Varvgs['vars'] = var_data[idx[0]:len(idx)-1]            #Need to add modified data
+                Varvgs['accurate'] = var_data[idx[0]:len(idx)-1]        #Accurate streaming data
+                Varvgs['t'] = bus_set.simulationTime-start_time
+                print('Time', Varvgs['t'])
+                Varvgs['k'] = bus_set.simulationTime/30
+                print('Steps', Varvgs['k'])
+                JsonVarvgs = json.dumps(Varvgs)
+                dimec.send_var(dev, 'Varvgs', JsonVarvgs)
+                return True
+
+def ltb_stream_sim(SysParam, Varheader, Idxvgs):
+    sim = {}
+    sim['SysParam'] = SysParam
+    sim['Varheader'] = Varheader
+    sim['Idxvgs'] = Idxvgs
+    sim['Varvgs'] = Varvgs
+    dimec = set_dime_connect('sim', 'tcp://127.0.0.1:5678')
+    #dimec.exit()
+    dimec.send_var('sim', 'sim', sim)
+    #dimec.send_var('geo', 'sim', sim)
+    while 1:
+        Vgsinfo = varreqs.mod_requests()
+        ltb_stream(Vgsinfo)
+    #dimec.exit()
+
+
+
