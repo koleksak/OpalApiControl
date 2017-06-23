@@ -109,6 +109,7 @@ def mod_requests():
                     #Vgsinfo[dev_name]['vgsvaridx'] = []
                     #Vgsinfo[dev_name]['usepmu'] = []
                     #Vgsinfo[dev_name]['limitsample'] = []
+    #print Vgsinfo
     return Vgsinfo
 
 def obj_to_dict_helper(objects):

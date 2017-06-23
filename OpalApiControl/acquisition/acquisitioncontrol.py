@@ -136,6 +136,7 @@ class StartAcquisitionThread(threading.Thread,DataList):
             if(self.simulationTime-self.lastAcq >= self.interval):
                 self.lock.acquire()
                 self.dataList.dataValues.append(tuple(sigVals))
+                #print sigVals
                 self.lock.release()
                 self.lastAcq = self.simulationTime
                 #print("simTime at Acq: ", self.simulationTime)

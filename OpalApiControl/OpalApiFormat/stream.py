@@ -20,11 +20,12 @@ import stream
 import threading
 
 
+global Bus_Data
 Bus_Data = acquisitioncontrol.DataList(1)
 BusIDX = {}
 busvolt = []
 busang = []
-Syn_Data = acquisitioncontrol.DataList(2)
+#Syn_Data = acquisitioncontrol.DataList(2)
 SynIDX = {}
 synang = []
 synspeed = []
@@ -40,12 +41,12 @@ ExcIDX = {}
 excVref = []
 excVmag = []
 
-Load_Data = acquisitioncontrol.DataList(3)
+#Load_Data = acquisitioncontrol.DataList(3)
 VarStore = {}
 Varvgs = {}
 global dimec
-global start_time
-global bus_set
+start_time = 0
+
 
 def stream_data(groups):
     """Creates Bus,Generator, and Load Data Structure as well as the acquisition threads for dynamic streaming. Threads run
@@ -53,27 +54,29 @@ def stream_data(groups):
      granted the Bus_Data, etc, if this module is imported
 
      groups = (group# tuple, in ascending order)"""
-    if 1 in groups:
-        bus_set = acquisitioncontrol.StartAcquisitionThread('ephasorFormat1', 'phasor01_IEEE39', Bus_Data, groups[0],
-                                                       "Bus Data Thread Set", 0.33)
-    if 2 in groups:
-        syn_set = acquisitioncontrol.StartAcquisitionThread('ephasorFormat1', 'phasor01_IEEE39', Syn_Data, groups[1],
-                                                       "Generator Data Thread Set", 0.33)
-    if 3 in groups:
-        load_set = acquisitioncontrol.StartAcquisitionThread('ephasorFormat1', 'phasor01_IEEE39', Load_Data, groups[2],
-                                                       "Load Data Thread Set", 0.33)
-    if 4 in groups:
-        line_set = acquisitioncontrol.StartAcquisitionThread('ephasorFormat1', 'phasor01_IEEE39', Load_Data, groups[3],
-                                                         "Load Data Thread Set", 0.33)
-    if 1 in groups:
-        bus_set.start()
-    if 2 in groups:
-        syn_set.start()
-    if 3 in groups:
-        load_set.start()
-    #if 4 in groups:
-    #    line_set.start()
-    acquire.connectToModel('ephasorFormat1','phasor01_IEEE39')
+    #if 1 in groups:
+    global bus_set
+    bus_set = acquisitioncontrol.StartAcquisitionThread('IEEE39Acq', 'phasor01_IEEE39', Bus_Data, groups[0],
+                                                         "Bus Data Thread Set", 0.33)
+    print('Data Thread started')
+    # if 2 in groups:
+    #     syn_set = acquisitioncontrol.StartAcquisitionThread('ephasorFormat1', 'phasor01_IEEE39', Syn_Data, groups[1],
+    #                                                    "Generator Data Thread Set", 0.33)
+    # if 3 in groups:
+    #     load_set = acquisitioncontrol.StartAcquisitionThread('ephasorFormat1', 'phasor01_IEEE39', Load_Data, groups[2],
+    #                                                    "Load Data Thread Set", 0.33)
+    # if 4 in groups:
+    #     line_set = acquisitioncontrol.StartAcquisitionThread('ephasorFormat1', 'phasor01_IEEE39', Load_Data, groups[3],
+    #                                                      "Load Data Thread Set", 0.33)
+    #if 1 in groups:
+    bus_set.start()
+    # if 2 in groups:
+    #     syn_set.start()
+    # if 3 in groups:
+    #     load_set.start()
+    # #if 4 in groups:
+    # #    line_set.start()
+    acquire.connectToModel('IEEE39Acq','phasor01_IEEE39')
     OpalApiPy.SetAcqBlockLastVal(0, 1)
     start_time = bus_set.simulationTime
 
@@ -84,14 +87,15 @@ def set_dime_connect(dev, port):
     try:
         global dimec
         dimec = dime.Dime(dev, port)
-        #dimec.cleanup()
         dimec.start()
-        #dimec.exit()
         sleep(0.1)
-        #dimec.exit()
     except:
-        logging.warning('<dime connection not established>')
-        #return False
+        try:
+            dimec.exit()
+            dimec.start()
+        except:
+            logging.warning('<dime connection not established>')
+            return False
     else:
 
         logging.info('<dime connection established>')
@@ -100,12 +104,13 @@ def set_dime_connect(dev, port):
 def acq_data():
     """Constructs acquisition list for data server. Slight re-ordering is done for Bus P and Q(Must append Syn,Load P and Q)"""
     All_Acq_Data = []
+    #print('*************', Bus_Data.returnLastAcq())
     All_Acq_Data.extend(Bus_Data.returnLastAcq())
-    All_Acq_Data.append(psse32.freq)
-    All_Acq_Data.extend(Load_Data.returnLastAcq())
-    All_Acq_Data.extend(Syn_Data.returnLastAcq())
+    #All_Acq_Data.append(psse32.freq)
+    #All_Acq_Data.extend(Load_Data.returnLastAcq())
+    #All_Acq_Data.extend(Syn_Data.returnLastAcq())
 
-
+    #print ('Acq Data', All_Acq_Data)
     return All_Acq_Data
 
 def ltb_stream(Vgsinfo):
@@ -126,6 +131,7 @@ def ltb_stream(Vgsinfo):
             except:
                 logging.error('<No simulation data available>')
             else:
+                #logging.log('<Setting Varvgs for{} >'.format(dev))
                 Varvgs['vars'] = var_data[idx[0]:len(idx)-1]            #Need to add modified data
                 Varvgs['accurate'] = var_data[idx[0]:len(idx)-1]        #Accurate streaming data
                 Varvgs['t'] = bus_set.simulationTime-start_time
@@ -134,6 +140,7 @@ def ltb_stream(Vgsinfo):
                 print('Steps', Varvgs['k'])
                 JsonVarvgs = json.dumps(Varvgs)
                 dimec.send_var(dev, 'Varvgs', JsonVarvgs)
+                print ('VarVgs', Varvgs)
                 return True
 
 def ltb_stream_sim(SysParam, Varheader, Idxvgs):
@@ -146,9 +153,12 @@ def ltb_stream_sim(SysParam, Varheader, Idxvgs):
     #dimec.exit()
     dimec.send_var('sim', 'sim', sim)
     #dimec.send_var('geo', 'sim', sim)
+    groups = (1, 2, 3, 4)
+    stream_data(groups)
     while 1:
         Vgsinfo = varreqs.mod_requests()
         ltb_stream(Vgsinfo)
+
     #dimec.exit()
 
 

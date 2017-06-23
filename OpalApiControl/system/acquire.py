@@ -8,8 +8,9 @@
 
 # ***************************************************************************************
 # Modules
-# ***************************************************************************************
-from OpalApiControl.config import *
+import OpalApiPy
+import RtlabApi
+import os
 
 # ***************************************************************************************
 # Globals
@@ -30,7 +31,7 @@ def connectToModel(project,model):
     # model = 'phasor01_IEEE39'
     # connect to the local project
 
-    projectPath = 'C:/Users/*/OPAL-RT/RT-LABv11_Workspace/'
+    projectPath = 'C:/RT-LABv11_Workspace/'
     projectName = os.path.join(projectPath,str(project)+'/'+ str(project) + '.llp')
     modelPath = os.path.join(projectPath, 'Simulink/')
     modelName = str(model) + '.mdl'
@@ -57,7 +58,7 @@ def connectToModelTest(project,model):    #####Working on load, and execute stat
     # model = 'rtdemo1'
     # connect to the local project
 
-    projectPath = 'C:/Users/*/OPAL-RT/RT-LABv11_Workspace/'
+    projectPath = 'C:/RT-LABv11_Workspace/'
     projectName = os.path.join(projectPath,str(project)+'/'+str(project) +'.llp')
     modelPath = os.path.join(projectPath,'Simulink/')
     modelName = str(model) + '.mdl'

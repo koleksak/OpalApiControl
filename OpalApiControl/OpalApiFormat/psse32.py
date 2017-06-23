@@ -1009,7 +1009,7 @@ def to_number(s):
     return ret
 
 if __name__ == '__main__':
-    project = 'ephasorFormat1'
+    project = 'IEEE39Acq'
     rawfile = 'Curent02_final'
     dyrfile = 'Curent02_final_Wind'
     #rawfile = 'IEEE39'
