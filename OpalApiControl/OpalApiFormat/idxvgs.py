@@ -2,11 +2,13 @@
 VarIDX for LTB PSAT Formatted Data Streaming from ePhasorsim Models
 
 """
-
+import os
 import psse32
 import dime
 import stream
 import json
+from OpalApiControl.signals import signalcontrol
+
 
 Idx = {}
 Idxvgs = {}
@@ -21,6 +23,9 @@ Varheader = []
 #var_keys_order = ['w_Busfreq', 'delta', 'omega','pm', 'wref', 'vf', 'vm',
 #    'theta', 'V', 'P', 'Q', 'p', 'q', 'Pij', 'Pji', 'Qij', 'Qji', 'Iij', 'Iji', 'Sij', 'Sji']
 idx_vgs_order = ['Bus', 'Syn', 'Exc', 'Line', 'Tg']
+#Generate state and alg order lists from ePhasorsim signalnames for linked association
+state = []
+alg = []
 state_order = ['w_Busfreq', 'delta', 'omega','pm', 'wref', 'vf', 'vm']
 alg_order = ['theta', 'V', 'P', 'Q', 'p', 'q', 'Pij', 'Pji', 'Qij', 'Qji', 'Iij', 'Iji', 'Sij', 'Sji']
 BusPar = ['V', 'theta', 'P', 'Q', 'w_Busfreq']
@@ -28,6 +33,12 @@ SynPar = ['p', 'q', 'delta', 'omega']
 ExcPar = ['vf', 'vm']
 LinePar = ['Pij', 'Pji', 'Qij', 'Qji', 'Iij', 'Iji', 'Sij', 'Sji']
 TgPar = ['pm', 'wref']
+SysPar = {
+    'Bus': ['V', 'theta', 'P', 'Q', 'w_Busfreq'],
+    'Syn': ['p', 'q', 'delta', 'omega'],
+    'Exc': ['vf', 'vm'],
+    'Line': ['Pij', 'Pji', 'Qij', 'Qji', 'Iij', 'Iji', 'Sij', 'Sji'],
+    'Tg': ['pm', 'wref']}
 
 def set_idxvgs_gen_helper(SysParam):
     """Generates IDX matrix with elements to ease Idxvgs creation. Follows Variable name orders
@@ -58,6 +69,47 @@ def set_idxvgs_gen_helper(SysParam):
     Idx['Tg'] = TgIDX
 
     #ADD WIND MODELS if nec
+
+
+def set_ephasor_ports(project, model):
+    """sets the order for IDXvgs and Varheader based upon the solver output ports in ePhasorsim"""
+    #Idx = {}
+    item = 0
+    idx_list = []
+    Varheader = signalcontrol.acquisitionSignalsParse(project, model)
+    varhead = []
+    for var in Varheader:
+        var = var.split('(')
+        varhead.append(var[0])
+
+
+    while item < len(varhead):
+        varname = varhead[item]
+        for param in SysPar.keys():
+            param_list = SysPar[param]
+            if param in Idx.keys():
+                idx_list = []
+                pass
+            else:
+                Idx[param] = {}
+                idx_list = []
+
+            #print SysPar[param]
+            if varname in SysPar[param] and item != len(varhead):
+                #idxvgs[param][varname] = {}
+                #print('Varheadit:{}  Var:{} '.format(varhead[item], var))
+                prevname = varname
+                currentname = varname
+                while prevname == currentname and item != len(varhead):
+                    idx_list.append(item+1)
+                    Idx[param][varname] = idx_list
+                    try:
+                        currentname = varhead[item+1]
+                    except:
+                        pass
+                    item += 1
+
+    return Idx, Varheader
 
 
 def set_idxvgs(SysParam):  ###REPLACED WITH set_idx_gen_helper()
@@ -160,8 +212,6 @@ def idx_choose_order():
     return Idxvgs
 
 
-
-
 def set_varheader():
     """Creates Variable Names for varidx indices"""
     #print('Idxvgs', Idxvgs)
@@ -178,12 +228,15 @@ def set_varheader():
                     Varheader.append(var+'_'+str(i))
     return Varheader
 
+
 def check_set_varheader():
     print Varheader
+
 
 def var_idx_vgs_list():
     for count in range(0, len(Varheader)):
         print('Var: {}  Idx: {} '.format(Varheader[count], count+1))
+
 
 def send_varhead_idxvgs(dev, dimec, Varheader):
     """Sends Varheader and Indices to Dime server after power flow"""

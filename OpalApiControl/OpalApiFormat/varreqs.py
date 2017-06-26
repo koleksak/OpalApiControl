@@ -92,7 +92,7 @@ def mod_requests():
                     if len(vgsvaridx) != 0:
                         if 'location' not in Vgsinfo:
                             Vgsinfo[dev_name] = {}
-                            print('Create vgs dev', Vgsinfo)
+                            #print('Create vgs dev', Vgsinfo)
                             Vgsinfo['dev_list'][dev_name]['location'] = []
                             Vgsinfo['dev_list'][dev_name]['vgsvaridx'] = vgsvaridx
                             Vgsinfo['dev_list'][dev_name]['usepmu'] = usepmu

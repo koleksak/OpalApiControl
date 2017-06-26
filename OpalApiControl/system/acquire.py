@@ -26,7 +26,7 @@ realTimeModeList = {'Hardware Sync':0, 'Simulation':1, 'Software Sync':2, 'Not U
 
 def connectToModel(project,model):
     """Takes the name of the project and model to connect to(string) and connectsif model is compiled"""
-    print "in connectToModel"
+
     # project = 'ephasorex1'
     # model = 'phasor01_IEEE39'
     # connect to the local project
@@ -48,12 +48,11 @@ def connectToModel(project,model):
     print "Now connected to %s model." % modelName
     # print "Model state 1 is %s" %modelState
 
-
-    # return modelState
+    return modelState
 
 def connectToModelTest(project,model):    #####Working on load, and execute states..NOT COMPLETE
     """Takes the name of the model to connect to(string) and connects based on current model state"""
-    print "in connectToModel"
+
     # project = 'Connect1'
     # model = 'rtdemo1'
     # connect to the local project
@@ -73,7 +72,7 @@ def connectToModelTest(project,model):    #####Working on load, and execute stat
     modelState, realTimeMode = OpalApiPy.GetModelState()
     # print "Model State Connected is %s." %modelStateList[modelState]
     print "Now connected to %s model." %modelName
-    print "Model state 1 is %s" %modelStateList[modelState]
+    #print "Model state 1 is %s" %modelStateList[modelState]
 
     # OpalApiPy.StartCompile2((("",31),))
     # print"compiling"

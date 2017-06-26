@@ -79,6 +79,7 @@ def stream_data(groups):
     acquire.connectToModel('IEEE39Acq','phasor01_IEEE39')
     OpalApiPy.SetAcqBlockLastVal(0, 1)
     start_time = bus_set.simulationTime
+    return bus_set
 
 
 def set_dime_connect(dev, port):
@@ -89,17 +90,20 @@ def set_dime_connect(dev, port):
         dimec = dime.Dime(dev, port)
         dimec.start()
         sleep(0.1)
+
     except:
         try:
             dimec.exit()
             dimec.start()
+
         except:
             logging.warning('<dime connection not established>')
             return False
     else:
-
+        #dimec.exit()
         logging.info('<dime connection established>')
         return dimec
+
 
 def acq_data():
     """Constructs acquisition list for data server. Slight re-ordering is done for Bus P and Q(Must append Syn,Load P and Q)"""
@@ -132,18 +136,18 @@ def ltb_stream(Vgsinfo):
                 logging.error('<No simulation data available>')
             else:
                 #logging.log('<Setting Varvgs for{} >'.format(dev))
-                Varvgs['vars'] = var_data[idx[0]:len(idx)-1]            #Need to add modified data
-                Varvgs['accurate'] = var_data[idx[0]:len(idx)-1]        #Accurate streaming data
+                Varvgs['vars'] = var_data[idx[0]:len(idx)]            #Need to add modified data
+                Varvgs['accurate'] = var_data[idx[0]:len(idx)]        #Accurate streaming data
                 Varvgs['t'] = bus_set.simulationTime-start_time
                 print('Time', Varvgs['t'])
-                Varvgs['k'] = bus_set.simulationTime/30
+                Varvgs['k'] = bus_set.simulationTime/0.03333
                 print('Steps', Varvgs['k'])
                 JsonVarvgs = json.dumps(Varvgs)
                 dimec.send_var(dev, 'Varvgs', JsonVarvgs)
-                print ('VarVgs', Varvgs)
+                #print ('VarVgs', Varvgs)
                 return True
 
-def ltb_stream_sim(SysParam, Varheader, Idxvgs):
+def ltb_stream_sim(SysParam, Varheader, Idxvgs, project, model):
     sim = {}
     sim['SysParam'] = SysParam
     sim['Varheader'] = Varheader
@@ -153,11 +157,16 @@ def ltb_stream_sim(SysParam, Varheader, Idxvgs):
     #dimec.exit()
     dimec.send_var('sim', 'sim', sim)
     #dimec.send_var('geo', 'sim', sim)
+    acquire.connectToModelTest(project, model)
+    modelState, realtimemode = OpalApiPy.GetModelState()
     groups = (1, 2, 3, 4)
-    stream_data(groups)
-    while 1:
+    acqthread = stream_data(groups)
+    sleep(0.1)
+    #print ('**********modelState*********', modelState)
+    while acqthread.is_alive():
         Vgsinfo = varreqs.mod_requests()
         ltb_stream(Vgsinfo)
+        modelState, realtimemode = OpalApiPy.GetModelState()
 
     #dimec.exit()
 

@@ -6,6 +6,7 @@ from collections import defaultdict
 import idxvgs
 import stream
 import varreqs
+import threading
 
 NEVER = 60
 CRITICAL = 50
@@ -58,6 +59,7 @@ Wind = []
 Windparams = {}
 Busfreq = []
 Pmu = []
+
 
 def testlines(fid):
     """Check the raw file for frequency base"""
@@ -1008,8 +1010,11 @@ def to_number(s):
         pass
     return ret
 
-if __name__ == '__main__':
+
+def init_pf_to_stream():
+    """Send initialization data to requested streaming service"""
     project = 'IEEE39Acq'
+    model = 'phasor01_IEEE39'
     rawfile = 'Curent02_final'
     dyrfile = 'Curent02_final_Wind'
     #rawfile = 'IEEE39'
@@ -1096,13 +1101,15 @@ if __name__ == '__main__':
         print(item)
 
 
-    print('Set Idxvgs')
-    idxvgs.set_idxvgs_gen_helper(SysParam)
-    Idxvgs = idxvgs.idx_choose_order()
+    #print('Set Idxvgs')
+    #idxvgs.set_idxvgs_gen_helper(SysParam)
+    #Idxvgs = idxvgs.idx_choose_order()
 
-    print('Set Varheader')
-    Varheader = idxvgs.set_varheader()
-    stream.ltb_stream_sim(SysParam, Varheader, Idxvgs)
+    print('Set Varheader and IDXVGS')
+    Idxvgs, Varheader = idxvgs.set_ephasor_ports(project, model)
+    return SysParam, Varheader, Idxvgs, project, model
+
+
 
 
 

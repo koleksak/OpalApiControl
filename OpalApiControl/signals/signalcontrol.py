@@ -112,10 +112,10 @@ def getSignalsDict():
 
     return signalDict
 
-def acquisitionSignalsParse():
+def acquisitionSignalsParse(project, model):
     """Parses acquisition signals from main signal description list. Designed for use with setting
     IdxVgs and Varheader in ePhasorsim acquisition port selection"""
-
+    acquire.connectToModel(project, model)
     allSignals = list(OpalApiPy.GetSignalsDescription())
     ephasor_port_out = []
     for signal in allSignals:
