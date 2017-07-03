@@ -40,6 +40,7 @@ class DataList:
         self.GroupNumber = GroupNumber
         dataValues = []
         self.dataValues = dataValues
+
         #simulationTime = 0
         #self.simulationTime = simulationTime
 
@@ -53,7 +54,10 @@ class DataList:
         #if(lastAcq != 0):
         # print(self.dataValues[lastAcq-1])
         else:
-            return self.dataValues[lastAcq-1]
+
+            data = self.dataValues[lastAcq-1]
+
+            return data
         #else:
         #    print"NO Data available"
 
@@ -91,7 +95,7 @@ class DataList:
                 dynSig +=1
 
 
-class StartAcquisitionThread(threading.Thread,DataList):
+class StartAcquisitionThread(threading.Thread, DataList):
     def __init__(self,project,model,dataList,GroupNumber,threadName,interval):
         threading.Thread.__init__(self)
         self.project = project
@@ -112,6 +116,7 @@ class StartAcquisitionThread(threading.Thread,DataList):
         self.monitorInfo = monitorInfo
         lastAcq = 0
         self.lastAcq = lastAcq
+
 
 
     def run(self):
@@ -154,7 +159,7 @@ class StartAcquisitionThread(threading.Thread,DataList):
             # sleep(self.interval)
 
         OpalApiPy.Disconnect()
-        #print"Thread- " + self.threadName + " Exited"
+        print "Thread- " + self.threadName + " Exited"
 
 
 
@@ -444,22 +449,3 @@ def syncAcqReturn(GroupNumber,interval):   ## This has been replaced by acquisit
     #     acqControl = 0
     #     OpalApiPy.GetAcquisitionControl(acqControl,group)
     #     print"Group acquisition control released"
-
-
-#Multiprocessing routines require knowledge of pickling data from process to process
-
-class acquisitionMultiProc(multiprocessing.Process):   ###Have not successfully implemented
-    def __init__(self,processID,name,counter,GroupNumber,interval):
-        multiprocessing.Process.__init__(self)
-        self.processID = processID
-        self.name = name
-        self.counter = counter
-        self.GroupNumber = GroupNumber
-        self.interval = interval
-
-
-    def run(self):
-        print "Process- " + self.name
-        OpalApiPy.GetAcqGroupSyncSignals(0,0,0,1,0.001)
-        print"Process- " +self.name + " Exited"
-        # self.join()

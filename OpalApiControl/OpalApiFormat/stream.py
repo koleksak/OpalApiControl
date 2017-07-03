@@ -20,27 +20,9 @@ import stream
 import threading
 
 
-global Bus_Data
-Bus_Data = acquisitioncontrol.DataList(1)
-BusIDX = {}
-busvolt = []
-busang = []
+global All_Data
+All_Data = acquisitioncontrol.DataList(1)
 #Syn_Data = acquisitioncontrol.DataList(2)
-SynIDX = {}
-synang = []
-synspeed = []
-syne1d = []
-syne1q = []
-syne2d = []
-syne2q = []
-synpsid = []
-synpsiq = []
-synact = []
-synreact = []
-ExcIDX = {}
-excVref = []
-excVmag = []
-
 #Load_Data = acquisitioncontrol.DataList(3)
 VarStore = {}
 Varvgs = {}
@@ -55,10 +37,13 @@ def stream_data(groups):
 
      groups = (group# tuple, in ascending order)"""
     #if 1 in groups:
-    global bus_set
-    bus_set = acquisitioncontrol.StartAcquisitionThread('IEEE39Acq', 'phasor01_IEEE39', Bus_Data, groups[0],
-                                                         "Bus Data Thread Set", 0.33)
-    print('Data Thread started')
+    global data_set
+    global data_ret
+    data_set = acquisitioncontrol.StartAcquisitionThread('IEEE39Acq', 'phasor01_IEEE39', All_Data, groups[0],
+                                                         "Bus Data Thread Set", 0.0333)
+    data_ret = acquisitioncontrol.acquisitionThreadReturn('IEEE39Acq', 'phasor01_IEEE39', All_Data, groups[0],
+                                                          "Bus Data Thread Return" , 0.0333)
+
     # if 2 in groups:
     #     syn_set = acquisitioncontrol.StartAcquisitionThread('ephasorFormat1', 'phasor01_IEEE39', Syn_Data, groups[1],
     #                                                    "Generator Data Thread Set", 0.33)
@@ -69,7 +54,8 @@ def stream_data(groups):
     #     line_set = acquisitioncontrol.StartAcquisitionThread('ephasorFormat1', 'phasor01_IEEE39', Load_Data, groups[3],
     #                                                      "Load Data Thread Set", 0.33)
     #if 1 in groups:
-    bus_set.start()
+    data_set.start()
+    data_ret.start()
     # if 2 in groups:
     #     syn_set.start()
     # if 3 in groups:
@@ -78,8 +64,8 @@ def stream_data(groups):
     # #    line_set.start()
     acquire.connectToModel('IEEE39Acq','phasor01_IEEE39')
     OpalApiPy.SetAcqBlockLastVal(0, 1)
-    start_time = bus_set.simulationTime
-    return bus_set
+    start_time = data_set.simulationTime
+    return data_set, data_ret
 
 
 def set_dime_connect(dev, port):
@@ -109,7 +95,7 @@ def acq_data():
     """Constructs acquisition list for data server. Slight re-ordering is done for Bus P and Q(Must append Syn,Load P and Q)"""
     All_Acq_Data = []
     #print('*************', Bus_Data.returnLastAcq())
-    All_Acq_Data.extend(Bus_Data.returnLastAcq())
+    All_Acq_Data.extend(data_ret.lastAcq)
     #All_Acq_Data.append(psse32.freq)
     #All_Acq_Data.extend(Load_Data.returnLastAcq())
     #All_Acq_Data.extend(Syn_Data.returnLastAcq())
@@ -120,16 +106,17 @@ def acq_data():
 def ltb_stream(Vgsinfo):
     """Sends requested data indices for devices to the LTB server using dime"""
 
-    if Vgsinfo == None:
-        logging.warning('<No Devices Requesting>')
+    if len(Vgsinfo) == 0:
+        logging.warning('<No Device Requests>')
         return False
 
     else:
         acq_time = time.time()
-        for dev in varreqs.Vgsinfo['dev_list'].keys():
+        mods = Vgsinfo['dev_list']
+        for dev in mods:
             if dev == 'sim':
                 continue
-            idx = varreqs.Vgsinfo['dev_list'][dev]['vgsvaridx']
+            idx = Vgsinfo[dev]['vgsvaridx']
             try:
                 var_data = acq_data()
             except:
@@ -138,9 +125,9 @@ def ltb_stream(Vgsinfo):
                 #logging.log('<Setting Varvgs for{} >'.format(dev))
                 Varvgs['vars'] = var_data[idx[0]:len(idx)]            #Need to add modified data
                 Varvgs['accurate'] = var_data[idx[0]:len(idx)]        #Accurate streaming data
-                Varvgs['t'] = bus_set.simulationTime-start_time
+                Varvgs['t'] = data_set.simulationTime-start_time
                 print('Time', Varvgs['t'])
-                Varvgs['k'] = bus_set.simulationTime/0.03333
+                Varvgs['k'] = data_set.simulationTime/0.03333
                 print('Steps', Varvgs['k'])
                 JsonVarvgs = json.dumps(Varvgs)
                 dimec.send_var(dev, 'Varvgs', JsonVarvgs)
@@ -148,25 +135,25 @@ def ltb_stream(Vgsinfo):
                 return True
 
 def ltb_stream_sim(SysParam, Varheader, Idxvgs, project, model):
-    sim = {}
-    sim['SysParam'] = SysParam
-    sim['Varheader'] = Varheader
-    sim['Idxvgs'] = Idxvgs
-    sim['Varvgs'] = Varvgs
+    #sim = {}
+    #sim['SysParam'] = SysParam
+    #sim['Varheader'] = Varheader
+    #sim['Idxvgs'] = Idxvgs
+    #sim['Varvgs'] = Varvgs
+    global dimec
     dimec = set_dime_connect('sim', 'tcp://127.0.0.1:5678')
     #dimec.exit()
-    dimec.send_var('sim', 'sim', sim)
-    #dimec.send_var('geo', 'sim', sim)
+    dimec.broadcast('Varvgs', Varvgs)
+    dimec.broadcast('Idxvgs', Idxvgs)
     acquire.connectToModelTest(project, model)
-    modelState, realtimemode = OpalApiPy.GetModelState()
     groups = (1, 2, 3, 4)
-    acqthread = stream_data(groups)
+    acqthread, retthread = stream_data(groups)
     sleep(0.1)
-    #print ('**********modelState*********', modelState)
     while acqthread.is_alive():
-        Vgsinfo = varreqs.mod_requests()
+        Vgsinfo = varreqs.mod_requests(SysParam)
         ltb_stream(Vgsinfo)
-        modelState, realtimemode = OpalApiPy.GetModelState()
+        #sleep(0.0333)
+
 
     #dimec.exit()
 

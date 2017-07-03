@@ -38,7 +38,7 @@ if __name__ == '__main__':
         vars = dimec.sync()
         if vars:
             mods = dimec.workspace
-            pprint.pprint(mods['Varvgs'],None, 1, 40, 10)
+            pprint.pprint(mods, None, 1, 40, 10)
         sleep(0.03333)
         modelstate, realtimemode = OpalApiPy.GetModelState()
 

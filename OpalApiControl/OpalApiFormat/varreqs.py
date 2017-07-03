@@ -10,56 +10,67 @@ import unicodedata
 from pymatbridge import Matlab
 
 Vgsinfo = {}
-Vgsinfo['dev_list'] = {}
+#Vgsinfo['dev_list'] = {}
 SysParam = {}
 SysName = {}
 prereq = 'sim'
 
-def mod_requests():
+def mod_requests(SysParamInf):
     varname = stream.dimec.sync()
+    dev_list = stream.dimec.get_devices()
+
     if varname:
+        #print('Varname', varname)
         modules = stream.dimec.workspace
+        #print modules
         #modules = json.loads(modules)
+        #dev_list = stream.dimec.get_devices()
         global Vgsinfo
-        Vgsinfo['dev_list'] = modules
+        #Vgsinfo = {}
+        Vgsinfo['dev_list'] = {}
+        #Vgsinfo['dev_list'] = dev_list
         #print('MODULES'.format(modules))
         #print('Vgsinfo', Vgsinfo)
-        if prereq not in Vgsinfo['dev_list'].keys():
+        if prereq not in dev_list:
             print prereq
             logging.error('<No simulator connected>')
 
         else:
-            for dev_name in stream.dimec.workspace:
+            for dev_name in dev_list:
                 if dev_name == 'sim':
                     continue
-                jsonmods = Vgsinfo['dev_list'][dev_name]
-                mods = json.loads(jsonmods)
-                Vgsinfo['dev_list'][dev_name] = mods
+                jsonmods = modules[dev_name]
+                modules[dev_name] = json.loads(jsonmods)
+                #Vgsinfo['dev_list'][dev_name] = mods
 
                 if dev_name:
                     param, vgsvaridx, usepmu, limitsample = ([], [], [], [])
 
                     try:
-                        param = Vgsinfo['dev_list'][dev_name]['param']
+                        #param = Vgsinfo['dev_list'][dev_name]['param']
+                        param = modules[dev_name]['param']
 
 
                     except:
                         logging.error('<Param Field Error for {}>'.format(dev_name))
 
                     try:
-                        vgsvaridx = Vgsinfo['dev_list'][dev_name]['vgsvaridx']
+                        #vgsvaridx = Vgsinfo['dev_list'][dev_name]['vgsvaridx']
+                        vgsvaridx = modules[dev_name]['vgsvaridx']
 
                     except:
                         logging.error('<Vgsvaridx Field Error for {}>'.format(dev_name))
 
                     try:
-                        usepmu = Vgsinfo['dev_list'][dev_name]['usepmu']
+                        #usepmu = Vgsinfo['dev_list'][dev_name]['usepmu']
+                        usepmu = modules[dev_name]['usepmu']
 
                     except:
                         logging.error('<Usepmu Field Error for {}>'.format(dev_name))
 
                     try:
-                        limitsample = Vgsinfo['dev_list'][dev_name]['limitsample']
+                        #limitsample = Vgsinfo['dev_list'][dev_name]['limitsample']
+                        limitsample = modules[dev_name]['limitsample']
 
                     except:
                         logging.error('<Limitsample Field Error for {}>'.format(dev_name))
@@ -74,15 +85,19 @@ def mod_requests():
 
                             #print param
                             if dev == ('Pmu' or 'Exc' or 'Pss' or 'Dfig' or 'Syn'):
-                                SysParam[dev] = Vgsinfo['dev_list']['sim']['SysParam'][dev]
+                                #SysParam[dev] = Vgsinfo['dev_list']['sim']['SysParam'][dev]
+                                SysParam[dev] = SysParamInf[dev]
                             else:
-                                SysParam[dev] = Vgsinfo['dev_list']['sim']['SysParam'][dev]
+                                #SysParam[dev] = Vgsinfo['dev_list']['sim']['SysParam'][dev]
+                                SysParam[dev] = SysParamInf[dev]
 
                             if dev == ('Bus' or 'Areas' or 'Regions'):
-                                SysName[dev] = Vgsinfo['dev_list']['sim']['SysParam'][dev]
+                                SysName[dev] = SysParamInf[dev]
 
-                        SysParam['nBus'] = len(Vgsinfo['dev_list']['sim']['SysParam']['Bus'])
-                        SysParam['nLine'] = len(Vgsinfo['dev_list']['sim']['SysParam']['Line'])
+                        #SysParam['nBus'] = len(Vgsinfo['dev_list']['sim']['SysParam']['Bus'])
+                        SysParam['nBus'] = len(SysParamInf['Bus'])
+                        #SysParam['nLine'] = len(Vgsinfo['dev_list']['sim']['SysParam']['Line'])
+                        SysParam['nLine'] = len(SysParamInf['Line'])
                         JsonSysParam = json.dumps(SysParam)
                         JsonSysName = json.dumps(SysName)
                         stream.dimec.send_var(dev_name, 'SysParam', JsonSysParam)
@@ -90,25 +105,27 @@ def mod_requests():
                         print('Sent SysParam and SysName to {}'.format(dev_name))
 
                     if len(vgsvaridx) != 0:
-                        if 'location' not in Vgsinfo:
+                        if dev_name not in Vgsinfo['dev_list']:
+                            keys = Vgsinfo['dev_list'].keys()
+                            keys.append(dev_name)
                             Vgsinfo[dev_name] = {}
+                            Vgsinfo['dev_list'] = keys
                             #print('Create vgs dev', Vgsinfo)
-                            Vgsinfo['dev_list'][dev_name]['location'] = []
-                            Vgsinfo['dev_list'][dev_name]['vgsvaridx'] = vgsvaridx
-                            Vgsinfo['dev_list'][dev_name]['usepmu'] = usepmu
-                            Vgsinfo['dev_list'][dev_name]['limitsample'] = limitsample
+                            #Vgsinfo[dev_name]['location'] = []
+                            Vgsinfo[dev_name]['vgsvaridx'] = vgsvaridx
+                            Vgsinfo[dev_name]['usepmu'] = usepmu
+                            Vgsinfo[dev_name]['limitsample'] = limitsample
 
                         else:
-                            Vgsinfo['dev_list'].append(dev_name)
-                            #Vgsinfo[dev_name]['location'].append(vgsvaridx)
-                            Vgsinfo['dev_list'][dev_name]['vgsvaridx'].append(vgsvaridx)
-                            Vgsinfo['dev_list'][dev_name]['usepmu'] = usepmu
-                            Vgsinfo['dev_list'][dev_name]['limitsample'].append(limitsample)
+                            #Vgsinfo['dev_list'].append(dev_name+1)
+                            Vgsinfo[dev_name]['vgsvaridx'].append(vgsvaridx)
+                            Vgsinfo[dev_name]['usepmu'].append(usepmu)
+                            Vgsinfo[dev_name]['limitsample'].append(limitsample)
 
-                    #Vgsinfo[dev_name]['param'] = []
-                    #Vgsinfo[dev_name]['vgsvaridx'] = []
-                    #Vgsinfo[dev_name]['usepmu'] = []
-                    #Vgsinfo[dev_name]['limitsample'] = []
+                    modules[dev_name]['param'] = []
+                    modules[dev_name]['vgsvaridx'] = []
+                    modules[dev_name]['usepmu'] = []
+                    modules[dev_name]['limitsample'] = []
     #print Vgsinfo
     return Vgsinfo
 

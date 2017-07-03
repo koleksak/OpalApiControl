@@ -7,6 +7,9 @@ import idxvgs
 import stream
 import varreqs
 import threading
+import dime
+from dime import dime
+
 
 NEVER = 60
 CRITICAL = 50
