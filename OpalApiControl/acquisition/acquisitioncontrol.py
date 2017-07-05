@@ -36,13 +36,9 @@ import logging
 class DataList:
     # Creates a data structure for an acquisition group thread
     def __init__(self,GroupNumber):
-        # self.listName = listName
         self.GroupNumber = GroupNumber
         dataValues = []
         self.dataValues = dataValues
-
-        #simulationTime = 0
-        #self.simulationTime = simulationTime
 
     def returnLastAcq(self):
         """Returns the data for the last acquisition set in acqDir by acquisitionThread as well as
@@ -50,30 +46,24 @@ class DataList:
         lastAcq = len(self.dataValues)
         if(lastAcq == 0):
             return 0
-        # print"Last Acquisition for Group %i" %self.GroupNumber
-        #if(lastAcq != 0):
-        # print(self.dataValues[lastAcq-1])
         else:
-
             data = self.dataValues[lastAcq-1]
 
             return data
-        #else:
-        #    print"NO Data available"
 
     def showAcquisitionSignals(self,index):
         """Returns a List of the acquisition signals in for the signal group
-        as well as the dynamic signals added to the acquisition group"""
+        as well as the dynamic signals added to the acquisition group. Can only be called
+        while model is running"""
+
         count = 1
         for item in self.dataValues[index]:
             print"Acq ID: {}  Value: {}".format(count,item)
             count +=1
 
         allSignals = list(OpalApiPy.GetSignalsDescription())
-        # print("signal list before cut: ", allSignals)
         acqSigsTotal = OpalApiPy.GetNumSignalsForGroup(self.GroupNumber-1)
         acqSignalList = []
-        dynSignalList = []
         print"*****Acquisition Signals*****"
         acqCount = 0
         for signalList in allSignals:
@@ -117,18 +107,12 @@ class StartAcquisitionThread(threading.Thread, DataList):
         lastAcq = 0
         self.lastAcq = lastAcq
 
-
-
     def run(self):
         print "Thread- " + self.threadName
-        # project = 'ephasorex2'
-        # model = 'phasor1_IEEE39'
+
         acquire.connectToModel(self.project,self.model)
-        modelState,realTimeFactor = OpalApiPy.GetModelState()
+        modelState, realTimeFactor = OpalApiPy.GetModelState()
         while(modelState == OpalApiPy.MODEL_RUNNING and modelState != OpalApiPy.MODEL_PAUSED):
-
-
-            # print"Lock acquired by %s" %self.threadName
             try:
                 acqList = OpalApiPy.GetAcqGroupSyncSignals(self.GroupNumber - 1, 0, 0, 1, 1)
 
@@ -141,27 +125,15 @@ class StartAcquisitionThread(threading.Thread, DataList):
             if(self.simulationTime-self.lastAcq >= self.interval):
                 self.lock.acquire()
                 self.dataList.dataValues.append(tuple(sigVals))
-                #print sigVals
                 self.lock.release()
                 self.lastAcq = self.simulationTime
-                #print("simTime at Acq: ", self.simulationTime)
-                #print("sampleSec: ", self.sampleSec)
             else:
                 modelState, realTimeFactor = OpalApiPy.GetModelState()
                 continue
-                #print("simTime Last Acq: ", self.simulationTime)
-            # dataList = DataList(self.GroupNumber)
-            #self.dataList.dataValues.append(tuple(sigVals))
-            # print"Lock Released by %s" %self.threadName
-
             modelState, realTimeFactor = OpalApiPy.GetModelState()
-             #print"Last Acq Time is %s" %simulationTime
-            # sleep(self.interval)
 
         OpalApiPy.Disconnect()
         print "Thread- " + self.threadName + " Exited"
-
-
 
 
 class acquisitionThreadReturn(threading.Thread):
@@ -188,14 +160,10 @@ class acquisitionThreadReturn(threading.Thread):
             modelState, realTimeFactor = OpalApiPy.GetModelState()
             if((lastEntry != lastIndex) & (len(self.dataList.dataValues) != 0)):
                 self.lock.acquire()
-                # print"Lock Acquired by %s" %self.threadName
-                # print("Last acquisition call returns- {}".format(self.dataList.dataValues[lastIndex-1]))
                 self.lastAcq = self.dataList.dataValues[lastIndex-1]
                 lastIndex = lastEntry
-                # print"Lock Released by %s" %self.threadName
                 self.lock.release()
                 modelState, realTimeFactor = OpalApiPy.GetModelState()
-                # sleep(self.interval)
 
         OpalApiPy.Disconnect()
         print"Thread- " + self.threadName + " Exited"
@@ -250,70 +218,9 @@ class StartAcquisitionThreadWithTime(threading.Thread,DataList):    #REMOVE
         print"Thread- " + self.threadName + " Exited"
 
 
-class acquisitionThreadReturnWithTime(threading.Thread):         #REMOVE
-    def __init__(self,project,model,datalist,GroupNumber,threadName,interval):
-        threading.Thread.__init__(self)
-        self.project = project
-        self.model = model
-        self.threadName = threadName
-        self.GroupNumber = GroupNumber
-        self.interval = interval
-        lock = threading.Lock()
-        self.dataList = datalist
-        self.lock = lock
-        lastAcq = []
-        self.lastAcq = lastAcq
-        simulationClock = 0
-        self.simulationClock = simulationClock
-        # self.setDaemon(True)
-
-    def run(self):
-        print "Thread- " + self.threadName
-        acquire.connectToModel(str(self.project), str(self.model))
-        modelState, realTimeFactor = OpalApiPy.GetModelState()
-        clockTime = simulationTimeThread(self.project, self.model,self.interval)
-        #SetDaemon makes sure simulationTimeThread is killed when its calling thread finishes
-        clockTime.setDaemon(True)
-        clockTime.start()
-        #Joins to its calling thread and the main thread
-        clockTime.join(2)
-        #self.simulationClock = clockTime.simulationClock
-        previousAcqClock = 0
-        lastIndex = 1
-        while(modelState == OpalApiPy.MODEL_RUNNING):
-            lastEntry = len(self.dataList.dataValues)
-            # Retrieves last acquisition signals if the specified interval is exceeded
-            if (self.interval < (self.simulationClock - previousAcqClock)):
-                #Must update the model state consecutively to know when state has changed
-                modelState, realTimeFactor = OpalApiPy.GetModelState()
-                if((lastEntry != lastIndex) & (len(self.dataList.dataValues) != 0)):
-                    self.lock.acquire()
-                    # print"Lock Acquired by %s" %self.threadName
-                    # print("Last acquisition call returns- {}".format(self.dataList.dataValues[lastIndex-1]))
-                    self.lastAcq = self.dataList.dataValues[lastIndex - 1]
-                    #print("Last Acq: ",self.lastAcq)
-                    #print("simulation clock",simulationClock)
-                    lastIndex = lastEntry
-                    # print"Lock Released by %s" %self.threadName
-                    self.lock.release()
-                    modelState, realTimeFactor = OpalApiPy.GetModelState()
-                    previousAcqClock = self.simulationClock
-                    # sleep(self.interval)
-            else:
-
-                #Updates clocktime until interval is exceeded
-                modelState, realTimeFactor = OpalApiPy.GetModelState()
-                self.simulationClock = clockTime.simulationClock
+"""*********Below may be useful for keeping track of model time seperate from acquisition threads***********"""
 
 
-        #Thread must disconnect from the model when finished.
-        OpalApiPy.Disconnect()
-        print"Thread- " + self.threadName + " Exited"
-
-
-# acqDir = []
-# acqList = 0
-###CAN POSSIBLY REMOVE BELOW
 class simulationTimeThread(threading.Thread):
     # Use of the simulation time thread requires that calls for time differences are equal to
     # or greater than the simulation sample/sec as specified in the model's OpComm Block.
@@ -375,7 +282,7 @@ def getSyncClockPath(project,model):   #ADDED To acquisition thread class CAN PO
     return simulationTime
 
 
-def syncAcqReturn(GroupNumber,interval):   ## This has been replaced by acquisitionThreadWIthTime object
+def syncAcqReturnInfo(GroupNumber,interval):   ## Useful tool for wholistic information for acquisition group
     """Performs data acquisition at the specified time interval if the model is
     running, until the model stops running"""
     #Data Acquisition parameters
@@ -415,9 +322,8 @@ def syncAcqReturn(GroupNumber,interval):   ## This has been replaced by acquisit
             missedData, offset, simTime, sampleSec = monitorInfo
 
             # sets async data acquisiion to group #,rearm trigger after S seconds
-            repeat = True
             for items in monitorInfo:
-                print("missed Data:{}  offset:{}  simTime:{}  sampleSec:{}".format(missedData, offset, simTime, \
+                print("missed Data:{}  offset:{}  simTime:{}  sampleSec:{}".format(missedData, offset, simTime,
                                                                                    sampleSec))
             portID = 1
             for item in sigVals:
@@ -435,17 +341,9 @@ def syncAcqReturn(GroupNumber,interval):   ## This has been replaced by acquisit
             modelState, realTimeMode = OpalApiPy.GetModelState()
             # previousAcqClock = simulationClock
 
-
     if(modelState != OpalApiPy.MODEL_RUNNING):
         print"Model must be running to trigger data acquisition"
         OpalApiPy.GetAcquisitionControl(acqControl, GroupNumber)
         print"Group acquisition control released"
 
     OpalApiPy.Disconnect()
-    # except:
-    #     print"Error: acquisition failed"
-    #
-    # finally:
-    #     acqControl = 0
-    #     OpalApiPy.GetAcquisitionControl(acqControl,group)
-    #     print"Group acquisition control released"

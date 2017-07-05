@@ -1,16 +1,12 @@
 """Creates SysParam and varvgs subsets per device requests"""
 
-import dime
-import psse32
 import stream
-import idxvgs
 import logging
 import json
 import unicodedata
-from pymatbridge import Matlab
+
 
 Vgsinfo = {}
-#Vgsinfo['dev_list'] = {}
 SysParam = {}
 SysName = {}
 prereq = 'sim'
@@ -20,17 +16,9 @@ def mod_requests(SysParamInf):
     dev_list = stream.dimec.get_devices()
 
     if varname:
-        #print('Varname', varname)
         modules = stream.dimec.workspace
-        #print modules
-        #modules = json.loads(modules)
-        #dev_list = stream.dimec.get_devices()
         global Vgsinfo
-        #Vgsinfo = {}
         Vgsinfo['dev_list'] = {}
-        #Vgsinfo['dev_list'] = dev_list
-        #print('MODULES'.format(modules))
-        #print('Vgsinfo', Vgsinfo)
         if prereq not in dev_list:
             print prereq
             logging.error('<No simulator connected>')
@@ -41,7 +29,6 @@ def mod_requests(SysParamInf):
                     continue
                 jsonmods = modules[dev_name]
                 modules[dev_name] = json.loads(jsonmods)
-                #Vgsinfo['dev_list'][dev_name] = mods
 
                 if dev_name:
                     param, vgsvaridx, usepmu, limitsample = ([], [], [], [])
@@ -82,17 +69,13 @@ def mod_requests(SysParamInf):
                     #Send Parameter data
                     if len(param) != 0:
                         for dev in param:
-
-                            #print param
-                            if dev == ('Pmu' or 'Exc' or 'Pss' or 'Dfig' or 'Syn'):
-                                #SysParam[dev] = Vgsinfo['dev_list']['sim']['SysParam'][dev]
-                                SysParam[dev] = SysParamInf[dev]
+                            if dev == ('BusNames' or 'Areas' or 'Regions'):
+                                if dev == 'BusNames':
+                                    dev = 'Bus'
+                                SysName[dev] = SysParamInf[dev]
                             else:
                                 #SysParam[dev] = Vgsinfo['dev_list']['sim']['SysParam'][dev]
                                 SysParam[dev] = SysParamInf[dev]
-
-                            if dev == ('Bus' or 'Areas' or 'Regions'):
-                                SysName[dev] = SysParamInf[dev]
 
                         #SysParam['nBus'] = len(Vgsinfo['dev_list']['sim']['SysParam']['Bus'])
                         SysParam['nBus'] = len(SysParamInf['Bus'])
@@ -110,7 +93,6 @@ def mod_requests(SysParamInf):
                             keys.append(dev_name)
                             Vgsinfo[dev_name] = {}
                             Vgsinfo['dev_list'] = keys
-                            #print('Create vgs dev', Vgsinfo)
                             #Vgsinfo[dev_name]['location'] = []
                             Vgsinfo[dev_name]['vgsvaridx'] = vgsvaridx
                             Vgsinfo[dev_name]['usepmu'] = usepmu
@@ -126,8 +108,9 @@ def mod_requests(SysParamInf):
                     modules[dev_name]['vgsvaridx'] = []
                     modules[dev_name]['usepmu'] = []
                     modules[dev_name]['limitsample'] = []
-    #print Vgsinfo
+
     return Vgsinfo
+
 
 def obj_to_dict_helper(objects):
     """Strips unicode formatting from JSON objects to convert to Python ascii Dictionary"""
