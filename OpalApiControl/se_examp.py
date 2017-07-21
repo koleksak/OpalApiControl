@@ -1,13 +1,8 @@
 """SE example for testing ePhasorsim streaming"""
-import dime
-from dime import dime
+
 import OpalApiPy
-import RtlabApi
 from OpalApiControl.system import acquire
-from OpalApiFormat import idxvgs
-from OpalApiFormat import varreqs
 from OpalApiFormat import stream
-import logging
 import json
 from time import sleep
 import pprint
@@ -24,15 +19,27 @@ def ltb_stream_SE_examp():
     JsonSE = json.dumps(SE)
     dimec.send_var('sim', 'SE', JsonSE)
 
+def stream_event_examp():
+    Event = {}
+    Event['name'] = 'Bus'
+    Event['id'] = 1
+    Event['duration'] = 5
+    Event['action'] = 0
+    Event['time'] = 10
+    global dimec
+    JsonEvent = json.dumps(Event)
+    dimec.send_var('sim', 'Event', JsonEvent)
+
 if __name__ == '__main__':
     ltb_stream_SE_examp()
     modelstate = acquire.connectToModel('IEEE39Acq', 'phasor01_IEEE39')
+    stream_event_examp()
     while(modelstate == OpalApiPy.MODEL_RUNNING):
         vars = dimec.sync()
         if vars:
             mods = dimec.workspace
             pprint.pprint(mods, None, 1, 40, 10)
-        sleep(0.03333)
+        sleep(0.01)
         modelstate, realtimemode = OpalApiPy.GetModelState()
 
 

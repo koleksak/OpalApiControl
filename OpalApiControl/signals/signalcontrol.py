@@ -42,7 +42,7 @@ def showControlSignals():
 
 
 
-def getControlSignalsDict():
+def getControlSignalsDict():   #NEW FUNCTION IN PROGRES, ORDERED DICT for ID, key-name, value-value
     """"# Returns a Dictionary of key-value (ID,VALUE) for each control signal. Model must be loaded
     Read-Write Control Signals.  ID, Value pairs are ordered by model specification in the OpCommBlock"""
 
@@ -52,8 +52,20 @@ def getControlSignalsDict():
     for item in list(OpalApiPy.GetControlSignals(1)):
         signalDict[num] = item
         num += 1
+    subSystemSignals = OpalApiPy.GetControlSignalsDescription()
+    systemList = [subSystemSignals]
 
-    return signalDict
+    iDList = []
+    ControlSignals = {}
+    for systems in systemList:
+        systemInfo = systems
+        for signal in systemInfo:
+            signalType, subSystemId, path, signalName, reserved, readonly, value = signal
+            ControlSignals[signalName] = value
+            #print("SubSystem Name:{}  SubSystemID:{}  SignalName:{}  Value:{}".format(path, subSystemId, signalName, value))
+
+
+    return ControlSignals
 
 def numControlSignals():
     """Returns number of controllable signals in model.Model must be loaded"""
@@ -121,12 +133,13 @@ def acquisitionSignalsParse(project, model):
     for signal in allSignals:
         if signal[0] == 0:
             ephasor_port_out.append(signal[3])
+    OpalApiPy.Disconnect()
     return ephasor_port_out
 
 
-def setControlSignals(signalIDS,newSignalValues):
+def setControlSignals(signalIDS, newSignalValues):
     """Change signal values by signal subsystem names
-        signalNames can by a tuple (name1,name2....,nameN) or a single name
+        signalNames can be a tuple (name1,name2....,nameN) or a single name
         newSignalValues can also by a tuple (newValue1,newValue2,....newValueN), or a single value.
         Item indexes in the signal tuple correspond to respective numeric values in the value tuple """
     # controlChange = 1
@@ -136,7 +149,7 @@ def setControlSignals(signalIDS,newSignalValues):
     #for further expansion of setting the control signals for future updates, or through the
     #set control signals call itself. It differs from other functions in the API interface modules
     #as it doesn't take tuple (ID,Value) pairs, but is the quickest set function.
-    OpalApiPy.SetSignalsById(signalIDS,newSignalValues)
+    OpalApiPy.SetSignalsById(signalIDS, newSignalValues)
 
     # controlSignalValues = list(OpalApiPy.GetControlSignals(1))  ###REMOVE???
     # newSignalValues = list(newSignalValues)
