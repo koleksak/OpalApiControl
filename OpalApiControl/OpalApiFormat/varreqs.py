@@ -156,7 +156,10 @@ def set_signal_event(Event, ControlP, project, model):
             signame = 'bus_fault'
             value = Event['action'][item]
             start = Event['time'][item]
-            end = start + Event['duration'][item]
+            if Event['duration'] == 0:
+                end = 1000000
+            else:
+                end = start + Event['duration'][item]
             index = Event['id'][item]
             signal = signame + '(' + str(index)+ ')'
 
@@ -170,7 +173,10 @@ def set_signal_event(Event, ControlP, project, model):
             signame = 'line_fault'
             value = Event['action'][item]
             start = Event['time'][item]
-            end = start + Event['duration'][item]
+            if Event['duration'] == 0:
+                end = 1000000
+            else:
+                end = start + Event['duration'][item]
             index = Event['id'][item]
             signal = signame + '(' + str(index) + ')'
 
@@ -184,7 +190,10 @@ def set_signal_event(Event, ControlP, project, model):
             signame = 'syn_status'
             value = Event['action'][item]
             start = Event['time'][item]
-            end = start + Event['duration'][item]
+            if Event['duration'] == 0:
+                end = 1000000
+            else:
+                end = start + Event['duration'][item]
             index = Event['id'][item]
             signal = signame + '(' + str(index) + ')'
 
@@ -199,7 +208,7 @@ def opal_control_processor(signame, signal, start, end, value, project, model):
     deal with the time duration switching needed for event control signals"""
 
     name = multiprocessing.current_process().name
-    print name
+    print('Process Name', name)
     acquire.connectToModel(project, model)
     projectPath, modelName = OpalApiPy.GetCurrentModel()
     print('ProjectPath', projectPath)
@@ -208,12 +217,12 @@ def opal_control_processor(signame, signal, start, end, value, project, model):
     current_clock = OpalApiPy.GetSignalsByName(clockpath)
     start_time = time.time()
     sim_time = start_time + current_clock
-    print('CURENTCLOCK', sim_time)
-    print('SIMTIME', sim_time)
+    #print('CURENTCLOCK', sim_time)
+    #print('SIMTIME', sim_time)
     triggered = False   #Keeps track of whether event occured or not
     print('TIME OFFSET TO', sim_time - time.time())
     while (time.time()-start_time) <= end:
-        print('SIMTIME', sim_time)
+        #print('SIMTIME', sim_time)
         if ((time.time()-start_time) >= start) and triggered is False:
             if value == 0 and signame == 'bus_fault' or 'line_fault':
                 # Bus Fault trigger for ePhasor sim is Active for value of 1
@@ -221,17 +230,21 @@ def opal_control_processor(signame, signal, start, end, value, project, model):
                 try:
                     OpalApiPy.SetSignalsByName(signal, value)
                     triggered = True
+                    logging.info('<bus or line fault triggered>')
                 except:
                     OpalApiPy.SetSignalsByName(signame, value)
                     triggered = True
+                    logging.info('<bus or line fault triggered>')
 
             elif value == 0 and signame == 'syn_status':
                 try:
                     OpalApiPy.SetSignalsByName(signal, value)
                     triggered = True
+                    logging.info('<syn status triggered>')
                 except:
                     OpalApiPy.SetSignalsByName(signame, value)
-                triggered = True
+                    triggered = True
+                    logging.info('<syn status triggered>')
 
         #current_clock = OpalApiPy.GetSignalsByName(clockpath)
         sim_time = time.time()-start_time
@@ -239,8 +252,10 @@ def opal_control_processor(signame, signal, start, end, value, project, model):
     #Reset Event Signal
     try:
         OpalApiPy.SetSignalsByName(signal, not value)
+        logging.info('<event reset>')
     except:
         OpalApiPy.SetSignalsByName(signame, not value)
+        logging.info('<event reset>')
 
 
 #**********************************************************************

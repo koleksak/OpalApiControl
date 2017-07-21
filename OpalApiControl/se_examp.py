@@ -21,11 +21,11 @@ def ltb_stream_SE_examp():
 
 def stream_event_examp():
     Event = {}
-    Event['name'] = 'Bus'
-    Event['id'] = 1
-    Event['duration'] = 5
-    Event['action'] = 0
-    Event['time'] = 10
+    Event['name'] = ['Bus', 'Bus', 'Bus', 'Line', 'Line', 'Line', 'Syn', 'Syn', 'Syn', 'Syn', 'Syn']
+    Event['id'] = [1, 2, 3, 1, 2, 3, 1, 2, 3, 4, 5]
+    Event['duration'] = [5, 6, 7, 5, 6, 7, 5, 6, 7, 8, 9]
+    Event['action'] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    Event['time'] = [10, 10, 10, 15, 15, 15, 20, 20, 20, 20, 20]
     global dimec
     JsonEvent = json.dumps(Event)
     dimec.send_var('sim', 'Event', JsonEvent)
