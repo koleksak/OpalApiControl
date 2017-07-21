@@ -2,13 +2,9 @@
 VarIDX for LTB PSAT Formatted Data Streaming from ePhasorsim Models
 
 """
-import os
-import psse32
-import dime
-import stream
+
 import json
 from OpalApiControl.signals import signalcontrol
-
 
 Idx = {}
 Idxvgs = {}
@@ -26,7 +22,7 @@ idx_vgs_order = ['Bus', 'Syn', 'Exc', 'Line', 'Tg']
 #Generate state and alg order lists from ePhasorsim signalnames for linked association
 state = []
 alg = []
-state_order = ['w_Busfreq', 'delta', 'omega','pm', 'wref', 'vf', 'vm']
+state_order = ['w_Busfreq', 'delta', 'omega', 'pm', 'wref', 'vf', 'vm']
 alg_order = ['theta', 'V', 'P', 'Q', 'p', 'q', 'Pij', 'Pji', 'Qij', 'Qji', 'Iij', 'Iji', 'Sij', 'Sji']
 BusPar = ['V', 'theta', 'P', 'Q', 'w_Busfreq']
 SynPar = ['p', 'q', 'delta', 'omega']
@@ -81,7 +77,6 @@ def set_ephasor_ports(project, model):
     for var in Varheader:
         var = var.split('(')
         varhead.append(var[0])
-
 
     while item < len(varhead):
         varname = varhead[item]

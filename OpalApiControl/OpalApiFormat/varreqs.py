@@ -3,39 +3,60 @@
 import stream
 import logging
 import json
-import unicodedata
+import OpalApiPy
+import multiprocessing
+import os
+import time
+from OpalApiControl.system import acquire
 
-
-Vgsinfo = {}
 SysParam = {}
 SysName = {}
 prereq = 'sim'
+global Vgsinfo
+Vgsinfo = {}
+global ControlP  #List for holding event processing objects
+ControlP = []
+Vgsinfo['dev_list'] = {}
 
-def mod_requests(SysParamInf):
-    varname = stream.dimec.sync()
+
+def mod_requests(SysParamInf, project, model):
+    varname = stream.dimec.sync(1)
     dev_list = stream.dimec.get_devices()
 
     if varname:
-        modules = stream.dimec.workspace
-        global Vgsinfo
-        Vgsinfo['dev_list'] = {}
+        print varname
+        vars = stream.dimec.workspace
+        if varname == 'Event':
+            jsonevent = vars['Event']
+            Event = json.loads(jsonevent)
+            print Event
+            global ControlP
+            set_signal_event(Event, ControlP, project, model)   #ControlP is list for processing for each event
+            Event['name'] = []
+            Event['id'] = []
+            Event['action'] = []
+            Event['time'] = []
+            Event['duration'] = []
+            ControlP = []
+
+
         if prereq not in dev_list:
             print prereq
             logging.error('<No simulator connected>')
 
         else:
             for dev_name in dev_list:
-                if dev_name == 'sim':
+                if dev_name == 'sim' or 'Event':
                     continue
-                jsonmods = modules[dev_name]
-                modules[dev_name] = json.loads(jsonmods)
+                jsonmods = vars[dev_name]
+                vars[dev_name] = json.loads(jsonmods)
 
                 if dev_name:
                     param, vgsvaridx, usepmu, limitsample = ([], [], [], [])
 
                     try:
                         #param = Vgsinfo['dev_list'][dev_name]['param']
-                        param = modules[dev_name]['param']
+                        param = vars[dev_name]['param']
 
 
                     except:
@@ -43,21 +64,21 @@ def mod_requests(SysParamInf):
 
                     try:
                         #vgsvaridx = Vgsinfo['dev_list'][dev_name]['vgsvaridx']
-                        vgsvaridx = modules[dev_name]['vgsvaridx']
+                        vgsvaridx = vars[dev_name]['vgsvaridx']
 
                     except:
                         logging.error('<Vgsvaridx Field Error for {}>'.format(dev_name))
 
                     try:
                         #usepmu = Vgsinfo['dev_list'][dev_name]['usepmu']
-                        usepmu = modules[dev_name]['usepmu']
+                        usepmu = vars[dev_name]['usepmu']
 
                     except:
                         logging.error('<Usepmu Field Error for {}>'.format(dev_name))
 
                     try:
                         #limitsample = Vgsinfo['dev_list'][dev_name]['limitsample']
-                        limitsample = modules[dev_name]['limitsample']
+                        limitsample = vars[dev_name]['limitsample']
 
                     except:
                         logging.error('<Limitsample Field Error for {}>'.format(dev_name))
@@ -104,19 +125,256 @@ def mod_requests(SysParamInf):
                             Vgsinfo[dev_name]['usepmu'].append(usepmu)
                             Vgsinfo[dev_name]['limitsample'].append(limitsample)
 
-                    modules[dev_name]['param'] = []
-                    modules[dev_name]['vgsvaridx'] = []
-                    modules[dev_name]['usepmu'] = []
-                    modules[dev_name]['limitsample'] = []
+                    vars[dev_name]['param'] = []
+                    vars[dev_name]['vgsvaridx'] = []
+                    vars[dev_name]['usepmu'] = []
+                    vars[dev_name]['limitsample'] = []
 
     return Vgsinfo
 
+def set_signal_event(Event, ControlP, project, model):
+    """Takes controls from EVENT calls on dime connected modules and
+    sends them to the appropriate signal input in ephasorsim corresponding to
+    the signal name, which is matched to the ephasorsim name, and port for the signal.
 
-def obj_to_dict_helper(objects):
-    """Strips unicode formatting from JSON objects to convert to Python ascii Dictionary"""
-    dict_names_list = []
-    for obj in objects:
-        obj = unicodedata.normalize('NFKD', obj).encode('ascii', 'ignore')
-        dict_names_list.append(obj)
-    return dict_names_list
+    Event: structure with id,name,t0,action,duration
+    ControlP: list of control processes to append to for each event to manage processing"""
+    if type(Event['id']) in (int, float):
+        Event['id'] = [Event['id']]
+    if type(Event['name']) in (int, str, unicode):
+        Event['name'] = [Event['name']]
+    if type(Event['time']) in (int, float):
+        Event['time'] = [Event['time']]
+    if type(Event['action']) in (int, float):
+        Event['action'] = [Event['action']]
+    if type(Event['duration']) in (int, float):
+        Event['duration'] = [Event['duration']]
 
+    for item in range(0, len(Event['id'])):
+        if Event['name'][item] == 'Bus':
+            #Active Fault value == 1, Inactive Fault value == 0(for ePhasorsim)
+            signame = 'bus_fault'
+            value = Event['action'][item]
+            start = Event['time'][item]
+            end = start + Event['duration'][item]
+            index = Event['id'][item]
+            signal = signame + '(' + str(index)+ ')'
+
+            ControlP.append(multiprocessing.Process(name=signame + '_event' + str(index), target=opal_control_processor,
+                                                    args=(signame, signal, start, end, value, project, model)))
+            ControlP[-1].daemon = True
+            ControlP[-1].start()
+
+        elif Event['name'][item] == 'Line':
+            #Active Fault value == 1, Inactive Fault value == 0(for ePhasorsim)
+            signame = 'line_fault'
+            value = Event['action'][item]
+            start = Event['time'][item]
+            end = start + Event['duration'][item]
+            index = Event['id'][item]
+            signal = signame + '(' + str(index) + ')'
+
+            ControlP.append(multiprocessing.Process(name=signame + '_event' + str(index), target=opal_control_processor,
+                                                    args=(signame, signal, start, end, value, project, model)))
+            ControlP[-1].daemon = True
+            ControlP[-1].start()
+
+        elif Event['name'][item] == 'Syn':
+            #In-Service value == 1, Out-of-Service value == 0 (for ePhasorsim)
+            signame = 'syn_status'
+            value = Event['action'][item]
+            start = Event['time'][item]
+            end = start + Event['duration'][item]
+            index = Event['id'][item]
+            signal = signame + '(' + str(index) + ')'
+
+            ControlP.append(multiprocessing.Process(name=signame + '_event' + str(index), target=opal_control_processor,
+                                                    args=(signame, signal, start, end, value, project, model)))
+            ControlP[-1].daemon = True
+            ControlP[-1].start()
+
+
+def opal_control_processor(signame, signal, start, end, value, project, model):
+    """Handles the event processing for control signal input to ePhasorsim. Spawns new processes to
+    deal with the time duration switching needed for event control signals"""
+
+    name = multiprocessing.current_process().name
+    print name
+    acquire.connectToModel(project, model)
+    projectPath, modelName = OpalApiPy.GetCurrentModel()
+    print('ProjectPath', projectPath)
+    clockpath = model + '/sm_master/clock/port1'
+    print('ClockPath', projectPath)
+    current_clock = OpalApiPy.GetSignalsByName(clockpath)
+    start_time = time.time()
+    sim_time = start_time + current_clock
+    print('CURENTCLOCK', sim_time)
+    print('SIMTIME', sim_time)
+    triggered = False   #Keeps track of whether event occured or not
+    print('TIME OFFSET TO', sim_time - time.time())
+    while (time.time()-start_time) <= end:
+        print('SIMTIME', sim_time)
+        if ((time.time()-start_time) >= start) and triggered is False:
+            if value == 0 and signame == 'bus_fault' or 'line_fault':
+                # Bus Fault trigger for ePhasor sim is Active for value of 1
+                value = 1
+                try:
+                    OpalApiPy.SetSignalsByName(signal, value)
+                    triggered = True
+                except:
+                    OpalApiPy.SetSignalsByName(signame, value)
+                    triggered = True
+
+            elif value == 0 and signame == 'syn_status':
+                try:
+                    OpalApiPy.SetSignalsByName(signal, value)
+                    triggered = True
+                except:
+                    OpalApiPy.SetSignalsByName(signame, value)
+                triggered = True
+
+        #current_clock = OpalApiPy.GetSignalsByName(clockpath)
+        sim_time = time.time()-start_time
+
+    #Reset Event Signal
+    try:
+        OpalApiPy.SetSignalsByName(signal, not value)
+    except:
+        OpalApiPy.SetSignalsByName(signame, not value)
+
+
+#**********************************************************************
+"""Originally created for multiple signals to call one event change, adjusted processing to 
+be handles by simulator. Below section may be usable for future, more complex simulink block control
+"""
+# def set_signal_event(Event, ControlP):
+#     """Takes controls from EVENT calls on dime connected modules and
+#     sends them to the appropriate signal input in ephasorsim corresponding to
+#     the signal name, which is matched to the ephasorsim name, and port for the signal.
+#
+#     Event: structure with id,name,t0,action,duration
+#     ControlP: list of control processes to append to for each event to manage processing"""
+#     if type(Event['id']) in (int, float):
+#         Event['id'] = [Event['id']]
+#     if type(Event['name']) in (int, str, unicode):
+#         Event['name'] = [Event['name']]
+#     if type(Event['time']) in (int, float):
+#         Event['time'] = [Event['time']]
+#     if type(Event['action']) in (int, float):
+#         Event['action'] = [Event['action']]
+#     if type(Event['duration']) in (int, float):
+#         Event['duration'] = [Event['duration']]
+#
+#     for item in range(0, len(Event['id'])):
+#         if Event['name'][item] == 'Bus':
+#             signame = 'bus_fault'
+#             sigstart = signame + '.start'
+#             sigend = signame + '.end'
+#             sigval = signame + '.after'
+#             signals = [sigstart, sigend, sigval]
+#             value = Event['action'][item]
+#             start = Event['time'][item]
+#             end = start + Event['duration'][item]
+#             index = Event['id'][item]
+#
+#             set_signal_helper(signame, signals, start, end, value, index)
+#
+#         elif Event['name'][item] == 'Line':
+#             signame = 'bus_fault'
+#             sigstart = signame + '.start'
+#             sigend = signame + '.end'
+#             sigval = signame + '.after'
+#             signals = [sigstart, sigend, sigval]
+#             value = Event['action'][item]
+#             start = Event['time'][item]
+#             end = start + Event['duration'][item]
+#             index = Event['id'][item]
+#             set_signal_helper(signame, signals, start, end, value, index)
+#
+#         elif Event['name'][item] == 'Syn':
+#             signame = 'bus_fault'
+#             sigstart = signame + '.start'
+#             sigend = signame + '.end'
+#             sigval = signame + '.after'
+#             signals = [sigstart, sigend, sigval]
+#             value = Event['action'][item]
+#             start = Event['time'][item]
+#             end = start + Event['duration'][item]
+#             index = Event['id'][item]
+#             set_signal_helper(signame, signals, start, end, value, index)
+
+# def set_signal_helper(signame, signals,value, index):
+#     """Helper function for setting ePhasor control input signals"""
+#     if value == 0:
+#         # Bus Fault trigger for ePhasor sim is Active for value of 1
+#         try:
+#             values = (start, end, 1)
+#             num = 0
+#             signalsgroup = []
+#             for sig in signal:
+#                 if sig == signame + '.start' or sig == signame + '.end':
+#                     signalsgroup.append(sig)
+#                     continue
+#                 else:
+#                     sig = sig + '(' + str(index) + ')'
+#                     signalsgroup.append(sig)
+#                     num += 1
+#             OpalApiPy.SetSignalsByName(tuple(signalsgroup), values)
+#         except:
+#             OpalApiPy.SetSignalsByName(tuple(signals), values)
+#
+#     else:
+#         try:
+#             values = (start, end, 0)
+#             num = 0
+#             signalsgroup = []
+#             for sig in signals:
+#                 if sig == signame + '.start' or sig == signame + '.end':
+#                     signalsgroup.append(sig)
+#                     continue
+#                 else:
+#                     sig = sig + '(' + str(index) + ')'
+#                     signalsgroup.append(sig)
+#                     num += 1
+#             OpalApiPy.SetSignalsByName(tuple(signalsgroup), values)
+#         except:
+#             OpalApiPy.SetSignalsByName(tuple(signals), values)
+#
+
+# def set_signal_helper(signame, signals, start, end, value, index):
+#     """Helper function for setting ePhasor control input signals"""
+#     if value == 0:
+#         # Bus Fault trigger for ePhasor sim is Active for value of 1
+#         try:
+#             values = (start, end, 1)
+#             num = 0
+#             signalsgroup = []
+#             for sig in signals:
+#                 if sig == signame + '.start' or sig == signame + '.end':
+#                     signalsgroup.append(sig)
+#                     continue
+#                 else:
+#                     sig = sig + '(' + str(index) + ')'
+#                     signalsgroup.append(sig)
+#                     num += 1
+#             OpalApiPy.SetSignalsByName(tuple(signalsgroup), values)
+#         except:
+#             OpalApiPy.SetSignalsByName(tuple(signals), values)
+#
+#     else:
+#         try:
+#             values = (start, end, 0)
+#             num = 0
+#             signalsgroup = []
+#             for sig in signals:
+#                 if sig == signame + '.start' or sig == signame + '.end':
+#                     signalsgroup.append(sig)
+#                     continue
+#                 else:
+#                     sig = sig + '(' + str(index) + ')'
+#                     signalsgroup.append(sig)
+#                     num += 1
+#             OpalApiPy.SetSignalsByName(tuple(signalsgroup), values)
+#         except:
+#             OpalApiPy.SetSignalsByName(tuple(signals), values)
+#*********************************************************************************

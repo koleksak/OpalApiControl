@@ -4,11 +4,7 @@ import os
 import re
 from collections import defaultdict
 import idxvgs
-import stream
-import varreqs
-import threading
-import dime
-from dime import dime
+
 
 
 NEVER = 60
@@ -1103,13 +1099,8 @@ def init_pf_to_stream():
     for item in SysParam['Regions']:
         print(item)
 
-
-    #print('Set Idxvgs')
-    #idxvgs.set_idxvgs_gen_helper(SysParam)
-    #Idxvgs = idxvgs.idx_choose_order()
-
-    print('Set Varheader and IDXVGS')
     Idxvgs, Varheader = idxvgs.set_ephasor_ports(project, model)
+    logging.log(1, '<Set Idxvgs and Varheader>')
     return SysParam, Varheader, Idxvgs, project, model
 
 
