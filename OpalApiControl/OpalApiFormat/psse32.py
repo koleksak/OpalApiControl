@@ -1010,16 +1010,16 @@ def to_number(s):
     return ret
 
 
-def init_pf_to_stream():
+def init_pf_to_stream(project, model, rawfile, dyrfile):
     """Send initialization data to requested streaming service"""
-    project = 'IEEE39Acq'
-    model = 'phasor01_IEEE39'
-    rawfile = 'Curent02_final'
-    dyrfile = 'Curent02_final_Wind'
+    # project = 'IEEE39Acq'
+    # model = 'phasor01_IEEE39'
+    # rawfile = 'Curent02_final'
+    # dyrfile = 'Curent02_final_Wind'
     #rawfile = 'IEEE39'
     #dyrfile = 'IEEE39'
 
-    projectPath = 'C:/RT-LABv11_Workspace/'
+    projectPath = 'C:/RT-LABv11_Workspace_New/'
     projectName = os.path.join(projectPath, str(project) + '/')
     filePath = os.path.join(projectName, 'simulink/')
     powfile = os.path.join(filePath, rawfile + '.raw')

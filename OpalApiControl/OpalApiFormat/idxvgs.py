@@ -36,6 +36,41 @@ SysPar = {
     'Line': ['Pij', 'Pji', 'Qij', 'Qji', 'Iij', 'Iji', 'Sij', 'Sji'],
     'Tg': ['pm', 'wref']}
 
+def set_ephasor_ports(project, model):
+    """sets the order for IDXvgs and Varheader based upon the solver output ports in ePhasorsim"""
+    item = 0
+    Varheader = signalcontrol.acquisitionSignalsParse(project, model)
+    varhead = []
+    for var in Varheader:
+        var = var.split('(')
+        varhead.append(var[0])
+
+    while item < len(varhead):
+        varname = varhead[item]
+        for param in SysPar.keys():
+            if param in Idx.keys():
+                idx_list = []
+                pass
+            else:
+                Idx[param] = {}
+                idx_list = []
+            if varname not in SysPar[param]:
+                item +=1
+            if varname in SysPar[param] and item != len(varhead):
+                prevname = varname
+                currentname = varname
+                while prevname == currentname and item != len(varhead):
+                    idx_list.append(item+1)
+                    Idx[param][varname] = idx_list
+                    try:
+                        currentname = varhead[item+1]
+                    except:
+                        pass
+                    item += 1
+
+    return Idx, Varheader
+
+
 def set_idxvgs_gen_helper(SysParam):
     """Generates IDX matrix with elements to ease Idxvgs creation. Follows Variable name orders
     defined in (Device)Par lists."""
@@ -65,46 +100,6 @@ def set_idxvgs_gen_helper(SysParam):
     Idx['Tg'] = TgIDX
 
     #ADD WIND MODELS if nec
-
-
-def set_ephasor_ports(project, model):
-    """sets the order for IDXvgs and Varheader based upon the solver output ports in ePhasorsim"""
-    #Idx = {}
-    item = 0
-    idx_list = []
-    Varheader = signalcontrol.acquisitionSignalsParse(project, model)
-    varhead = []
-    for var in Varheader:
-        var = var.split('(')
-        varhead.append(var[0])
-
-    while item < len(varhead):
-        varname = varhead[item]
-        for param in SysPar.keys():
-            param_list = SysPar[param]
-            if param in Idx.keys():
-                idx_list = []
-                pass
-            else:
-                Idx[param] = {}
-                idx_list = []
-
-            #print SysPar[param]
-            if varname in SysPar[param] and item != len(varhead):
-                #idxvgs[param][varname] = {}
-                #print('Varheadit:{}  Var:{} '.format(varhead[item], var))
-                prevname = varname
-                currentname = varname
-                while prevname == currentname and item != len(varhead):
-                    idx_list.append(item+1)
-                    Idx[param][varname] = idx_list
-                    try:
-                        currentname = varhead[item+1]
-                    except:
-                        pass
-                    item += 1
-
-    return Idx, Varheader
 
 
 def set_idxvgs(SysParam):  ###REPLACED WITH set_idx_gen_helper()

@@ -33,24 +33,19 @@ def connectToModel(project,model):
     # model = 'phasor01_IEEE39'
     # connect to the local project
 
-    projectPath = 'C:/RT-LABv11_Workspace/'
-    projectName = os.path.join(projectPath,str(project)+'/'+ str(project) + '.llp')
-    modelPath = os.path.join(projectPath, 'Simulink/')
+    projectPath = 'C:/RT-LABv11_Workspace_New/'
+    projectName = os.path.join(projectPath, str(project) + '/' + str(project) + '.llp')
+    modelPath = os.path.join(projectPath, str(project) + '/simulink/')
     modelName = str(model) + '.mdl'
 
     # Connects to Project
-    RtlabApi.OpenProject(projectName)
-    print "Now connected to '%s' project." % projectName
-
-    # Connects to model
-    #filename = os.path.join(modelPath, modelName)
-    #OpalApiPy.SetCurrentModel(filename)
-    modelState,realTimeMode = OpalApiPy.GetModelState()
-    print "Model State Connected is %s." % modelStateList[modelState]
-    print "Now connected to %s model." % modelName
-    # print "Model state 1 is %s" %modelState
-
-    return modelState
+    try:
+        RtlabApi.OpenProject(projectName)
+        # modelState,realTimeMode = OpalApiPy.GetModelState()
+    except:
+        logging.error("<Missed Connection>")
+        return False
+    return True
 
 
 def connectToModelTest(project, model):
@@ -63,7 +58,7 @@ def connectToModelTest(project, model):
         modelState, realTimeMode = OpalApiPy.GetModelState()
 
     except:
-        projectPath = 'C:/RT-LABv11_Workspace/'
+        projectPath = 'C:/RT-LABv11_Workspace_New/'
         projectName = os.path.join(projectPath, str(project)+'/'+str(project) +'.llp')
         modelPath = os.path.join(projectPath, 'Simulink/')
         modelName = str(model) + '.mdl'

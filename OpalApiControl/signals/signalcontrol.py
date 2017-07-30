@@ -25,7 +25,7 @@ import collections
 def showControlSignals():
     """Displays available subSystems along with their ID and value.
     Read-Write Control Signals"""
-
+    #OpalApiPy.GetSignalControl(0, 1)
     subSystemSignals = OpalApiPy.GetControlSignalsDescription()
     systemList = [subSystemSignals]
 
@@ -39,7 +39,7 @@ def showControlSignals():
             signalType, subSystemId, path, signalName, reserved, readonly, value = signal
             iDList.append(subSystemId)
             print("SubSystem Name:{}  SubSystemID:{}  SignalName:{}  Value:{}".format(path, subSystemId, signalName, value))
-
+    #OpalApiPy.GetSignalControl(0, 0)
 
 
 def getControlSignalsDict():   #NEW FUNCTION IN PROGRES, ORDERED DICT for ID, key-name, value-value
@@ -64,8 +64,8 @@ def getControlSignalsDict():   #NEW FUNCTION IN PROGRES, ORDERED DICT for ID, ke
             ControlSignals[signalName] = value
             #print("SubSystem Name:{}  SubSystemID:{}  SignalName:{}  Value:{}".format(path, subSystemId, signalName, value))
 
-
     return ControlSignals
+
 
 def numControlSignals():
     """Returns number of controllable signals in model.Model must be loaded"""
