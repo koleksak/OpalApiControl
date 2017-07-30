@@ -13,6 +13,7 @@ import varreqs
 import logging
 from time import sleep
 import json
+from collections import OrderedDict
 import threading
 
 
@@ -21,6 +22,8 @@ global All_Data
 All_Data = {}
 VarStore = {}
 Varvgs = {}
+global EventQueue
+EventQueue = OrderedDict()
 global dimec
 start_time = 0
 
@@ -36,18 +39,21 @@ def stream_data(groups, sim_stop, project, model):
     global data_ret_groups
     data_set_groups = {}
     data_ret_groups = {}
+    condition = threading.Condition()
+    kill = False
     #acquire.connectToModel('IEEE39Acq', 'phasor01_IEEE39')
 
     for num in range(1, len(groups)+1):
         All_Data[num] = acquisitioncontrol.DataList(num)
         data_set_groups[num] = acquisitioncontrol.StartAcquisitionThread(project, model, All_Data[num], groups[num-1],
                                                                          "Data Thread " + str(num) + " Set",
-                                                                         0.0333, sim_stop)
+                                                                         0.0333, sim_stop, condition)
 
         data_ret_groups[num] = acquisitioncontrol.acquisitionThreadReturn(project, model, All_Data[num], groups[num-1],
-                                                                          "Data Thread " + str(num) + " Return", 0.0333,
-                                                                          sim_stop)
-
+                                                                          "Data Thread " + str(num) + " Return",
+                                                                          0.0333, sim_stop, condition, kill)
+        data_set_groups[num].daemon = True
+        data_ret_groups[num].daemon = True
         data_set_groups[num].start()
         data_ret_groups[num].start()
 
@@ -90,7 +96,7 @@ def acq_data():
     return all_acq_data
 
 
-def ltb_stream(Vgsinfo):
+def ltb_stream(Vgsinfo, acq_thread_groups, groups):
     """Sends requested data indices for devices to the LTB server using dime"""
 
     if len(Vgsinfo) == 0:
@@ -102,55 +108,85 @@ def ltb_stream(Vgsinfo):
         for dev in mods:
             if dev == 'sim':
                 continue
-            idx = Vgsinfo[dev]['vgsvaridx'].pop()
+            idx = Vgsinfo[dev]['vgsvaridx'][-1]
             try:
                 var_data = acq_data()
             except:
                 logging.error('<No simulation data available>')
             else:
-                logging.log(1,'<Setting Varvgs>')
-                Varvgs['vars'] = var_data[idx[0]:len(idx)]            #Need to add modified data
-                Varvgs['accurate'] = var_data[idx[0]:len(idx)]        #Accurate streaming data
-                Varvgs['t'] = data_set_groups[1].simulationTime-start_time
-                print('Time', Varvgs['t'])
-                Varvgs['k'] = data_set_groups[1].simulationTime/0.03333
-                print('Steps', Varvgs['k'])
-                JsonVarvgs = json.dumps(Varvgs)
-                dimec.send_var(dev, 'Varvgs', JsonVarvgs)
+                for num in groups:
+                    Varvgs['vars'] = var_data[idx[0]:len(idx)]            #Need to add modified data
+                    Varvgs['accurate'] = var_data[idx[0]:len(idx)]        #Accurate streaming data
+                    Varvgs['t'] = acq_thread_groups[num].simulationTime
+                    Varvgs['k'] = acq_thread_groups[num].simulationTime/0.03333
+                    JsonVarvgs = json.dumps(Varvgs)
+                    dimec.send_var(dev, 'Varvgs', JsonVarvgs)
+                    logging.log(1, '<Data streamed to {} at {}>'.format(dev, Varvgs['t']))
 
-                return True
+                    return True
 
+def event_handler(EventQueue, sim_time):
+    """Manages ordered events by time sequence and removes event from queue when triggered"""
+    event_times = []
+    event_times.extend(EventQueue)
+    signals = []
+    vals = []
+    if abs(sim_time-event_times[0]) <= 0.01667:
+        print "Trigger event at ", sim_time
+        trig_event = EventQueue.popitem(False)
+        times = [event_times[0]] * (len(trig_event) + 1)
+        for sig in trig_event[1:][0]:
+            signals.append(sig[1])
+            vals.append(sig[3])
+        try:
+            OpalApiPy.SetSignalsByName(tuple(signals), tuple(vals))
+        except:
+            logging.error("<Signal input name error. No signals set>")
+        return EventQueue, True
+    else:
+        return EventQueue, False
 
 def ltb_stream_sim(SysParam, Varheader, Idxvgs, project, model, sim_stop):
 
     global dimec
     global Event
     Event = {}
+    print"Waiting for DiME Connection"
     dimec = set_dime_connect('sim', 'tcp://127.0.0.1:5678')
-    #dimec.exit()
+    print"DiME Connected"
     dimec.broadcast('Varheader', Varheader)
     dimec.broadcast('Idxvgs', Idxvgs)
     acquire.connectToModelTest(project, model)
     modelState, realTimeMode = OpalApiPy.GetModelState()
+    RtlabApi.OP_EXHAUSTIVE_DISPLAY  #Controller log displays maximimum information for running model
     try:
         numgroups = OpalApiPy.GetNumAcqGroups()
     except:
         logging.exception('<No Acquisition groups Available>')
     else:
         groups = list(range(1, numgroups, 1))
-        acqthread, retthread = stream_data(groups, sim_stop, project, model)
-        #sleep(0.1)
-        #while acqthread[1].is_alive():
-        while modelState == OpalApiPy.MODEL_PAUSED or modelState == OpalApiPy.MODEL_RUNNING:
+        acq_thread_groups, ret_thread_groups = stream_data(groups, sim_stop, project, model)
+        while acq_thread_groups[1].is_alive():
+        # while modelState == OpalApiPy.MODEL_PAUSED or modelState == OpalApiPy.MODEL_RUNNING:
             if sim_stop.is_set() is not True and modelState != OpalApiPy.MODEL_PAUSED:
                 acquire.transitionToPause()
                 #sim_stop.set()
             elif sim_stop.is_set() is True and modelState == OpalApiPy.MODEL_PAUSED:
                 acquire.connectToModelTest(project, model)
             else:
-                Vgsinfo = varreqs.mod_requests(SysParam, project, model)
-                ltb_stream(Vgsinfo)
+                global EventQueue
+                Vgsinfo, EventQueue = varreqs.mod_requests(SysParam, EventQueue)
+                if ret_thread_groups[1].new_data is True:
+                    ltb_stream(Vgsinfo, acq_thread_groups, groups)
+                    ret_thread_groups[1].new_data = False
+                if len(EventQueue) != 0:
+                    EventQueue, trigger = event_handler(EventQueue, acq_thread_groups[1].simulationTime)
+                    if trigger is True:
+                        logging.log(1, '<Event triggered at {}>'.format(acq_thread_groups[1].simulationTime))
+                else:
+                    logging.log(1, '<Event queue empty at {}>'.format(acq_thread_groups[1].simulationTime))
             modelState, realTimeMode = OpalApiPy.GetModelState()
     print('Sim Ended')
-    #acquire.transitionToPause()
+    #acquire.fullDisconnect()
     OpalApiPy.Disconnect()
+    return True

@@ -86,7 +86,7 @@ class DataList:
 
 
 class StartAcquisitionThread(threading.Thread, DataList):
-    def __init__(self,project,model,dataList,GroupNumber,threadName,interval, acq_wait):
+    def __init__(self, project, model, dataList, GroupNumber, threadName, interval, acq_wait, condition):
         threading.Thread.__init__(self)
         self.project = project
         self.model = model
@@ -98,6 +98,8 @@ class StartAcquisitionThread(threading.Thread, DataList):
         #acq_wait = threading.Event()
         self.acq_wait = threading.Event()
         acq_wait.set()
+        self.kill = threading.Event()
+        self.condition = condition
         self.dataList = dataList
         simulationTime = 0
         self.simulationTime = simulationTime
@@ -107,52 +109,60 @@ class StartAcquisitionThread(threading.Thread, DataList):
         self.sampleSec = sampleSec
         monitorInfo = 0
         self.monitorInfo = monitorInfo
-        lastAcq = 0
-        self.lastAcq = lastAcq
+        lastAcqTime = 0
+        self.lastAcqTime = lastAcqTime
+        sample_time_error = 2 * self.interval
+        self.sample_time_error = sample_time_error
 
     def run(self):
         print "Thread- " + self.threadName
-
-        acquire.connectToModel(self.project,self.model)
-        modelState, realTimeFactor = OpalApiPy.GetModelState()
-        while(modelState == OpalApiPy.MODEL_RUNNING or modelState == OpalApiPy.MODEL_PAUSED):
-            if modelState == OpalApiPy.MODEL_PAUSED and self.acq_wait.is_set() is False:
-                    #self.acq_wait.clear()
-                    #OpalApiPy.Disconnect()
-                    logging.warning('Thread Acq {} Paused '.format(self.threadName))
-                    self.acq_wait.wait(1)
-                    self.acq_wait.set()
-                    logging.warning('Thread Acq {} Resumed '.format(self.threadName))
-                    #OpalApiPy.LoadConsole()
-                    #OpalApiPy.ExecuteConsole()
-                    #OpalApiPy.Execute(1)
-                    #acquire.connectToModelTest(self.project, self.model)
-                    #break
-            else:
-                try:
-                    acqList = OpalApiPy.GetAcqGroupSyncSignals(self.GroupNumber - 1, 0, 0, 1, 1)
-                except:
-                    logging.warning('<Acquisition Not Available>')
-                    break
-
-            sigVals, monitorInfo, simTimeStep, endFrame = acqList
-            missedData,offset,self.simulationTime,self.sampleSec = monitorInfo
-            if(self.simulationTime-self.lastAcq >= self.interval):
-                self.lock.acquire()
-                self.dataList.dataValues.append(tuple(sigVals))
-                self.lock.release()
-                self.lastAcq = self.simulationTime
-            else:
-                modelState, realTimeFactor = OpalApiPy.GetModelState()
-                continue
+        self.lock.acquire()
+        try:
+            acquire.connectToModel(self.project, self.model)
             modelState, realTimeFactor = OpalApiPy.GetModelState()
+            self.lock.release()
+        except:
+            print 'Could not connect thread ' + self.threadName
+        else:
+            while(modelState == OpalApiPy.MODEL_RUNNING and self.kill.is_set() is False):#or modelState == OpalApiPy.MODEL_PAUSED):
+                if modelState == OpalApiPy.MODEL_PAUSED and self.acq_wait.is_set() is False:
+                        #self.acq_wait.clear()
+                        #OpalApiPy.Disconnect()
+                        logging.warning('Thread Acq {} Paused '.format(self.threadName))
+                        self.acq_wait.wait(1)
+                        self.acq_wait.set()
+                        logging.warning('Thread Acq {} Resumed '.format(self.threadName))
+                else:
+                    try:
+                        self.lock.acquire()
+                        acqList = OpalApiPy.GetAcqGroupSyncSignals(self.GroupNumber - 1, 0, 0, 1, 1)
+                        self.lock.release()
+                    except:
+                        logging.warning('<Acquisition Not Available>')
+                        break
 
-        #OpalApiPy.Disconnect()
+                sigVals, monitorInfo, simTimeStep, endFrame = acqList
+                missedData, offset, self.simulationTime, self.sampleSec = monitorInfo
+                if(self.interval <= self.simulationTime-self.lastAcqTime):
+                    if (self.sample_time_error <= self.simulationTime - self.lastAcqTime):
+                        logging.warning('<Acquisition sample step missed at {}>'.format(self.simulationTime))
+                        self.lastAcqTime = self.simulationTime
+                    else:
+                        # self.lock.acquire()
+                        self.condition.acquire()
+                        self.dataList.dataValues.append(tuple(sigVals))
+                        self.condition.notifyAll()
+                        self.condition.release()
+                        # self.lock.release()
+                        self.lastAcqTime = self.simulationTime
+                modelState, realTimeFactor = OpalApiPy.GetModelState()
+        self.kill.set()
+            #OpalApiPy.Disconnect()
         print "Thread- " + self.threadName + " Exited"
 
 
 class acquisitionThreadReturn(threading.Thread):
-    def __init__(self, project, model, datalist, GroupNumber, threadName, interval, acq_wait):
+    def __init__(self, project, model, datalist, GroupNumber, threadName, interval, acq_wait, condition, kill):
         threading.Thread.__init__(self)
         self.project = project
         self.model = model
@@ -164,31 +174,49 @@ class acquisitionThreadReturn(threading.Thread):
         self.lock = lock
         self.acq_wait = threading.Event()
         acq_wait.set()
+        self.kill = threading.Event()
+        kill.set()
+        self.condition = condition
+        new_data = False
+        self.new_data = new_data
         lastAcq = 0
         self.lastAcq = lastAcq
+        stale_data = 0
+        self.stale_data = stale_data
 
     def run(self):
         print "Thread- " + self.threadName
-        acquire.connectToModel(str(self.project), str(self.model))
-        modelState, realTimeFactor = OpalApiPy.GetModelState()
-        lastIndex = 1
-        while(modelState == OpalApiPy.MODEL_RUNNING or modelState == OpalApiPy.MODEL_PAUSED):
-            if modelState == OpalApiPy.MODEL_PAUSED and self.acq_wait.is_set() is False:
-                #self.acq_wait.clear()
-                #OpalApiPy.Disconnect()
-                logging.warning('Thread Acq {} Paused '.format(self.threadName))
-                self.acq_wait.wait(1)
-                self.acq_wait.set()
-                logging.warning('Thread Acq {} Resumed '.format(self.threadName))
-                # break
-            lastEntry = len(self.dataList.dataValues)
+        self.lock.acquire()
+        try:
+            acquire.connectToModel(self.project, self.model)
             modelState, realTimeFactor = OpalApiPy.GetModelState()
-            if((lastEntry != lastIndex) & (len(self.dataList.dataValues) != 0)):
-                self.lock.acquire()
-                self.lastAcq = self.dataList.dataValues[lastIndex-1]
-                lastIndex = lastEntry
-                self.lock.release()
-                modelState, realTimeFactor = OpalApiPy.GetModelState()
+            self.lock.release()
+        except:
+            print 'Could not connect thread ' + self.threadName
+        else:
+            lastIndex = 1
+            # while(modelState == OpalApiPy.MODEL_RUNNING):#or modelState == OpalApiPy.MODEL_PAUSED):
+            while self.kill.is_set() is False:
+                lastEntry = len(self.dataList.dataValues)
+                # if((lastEntry != lastIndex) & (len(self.dataList.dataValues) != 0)):
+                if modelState == OpalApiPy.MODEL_PAUSED and self.acq_wait.is_set() is False:
+                    # self.acq_wait.clear()
+                    logging.warning('Thread Acq {} Paused '.format(self.threadName))
+                    self.acq_wait.wait(1)
+                    self.acq_wait.set()
+                    logging.warning('Thread Acq {} Resumed '.format(self.threadName))
+                    # break
+                if lastEntry != 0:
+                    # self.lock.acquire()
+                    self.condition.acquire()
+                    self.lastAcq = self.dataList.dataValues[lastIndex-1]
+                    self.new_data = True
+                    self.condition.wait()
+                    self.condition.release()
+                    lastIndex = lastEntry
+                    # self.lock.release()
+
+                # modelState, realTimeFactor = OpalApiPy.GetModelState()
 
         #OpalApiPy.Disconnect()
         print"Thread- " + self.threadName + " Exited"
