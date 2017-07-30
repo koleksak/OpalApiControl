@@ -11,7 +11,7 @@ import pprint
 def ltb_stream_SE_examp():
     SE = {}
     SE['param'] = ['Bus', 'Line', 'PV', 'PQ']
-    SE['vgsvaridx'] = list(range(0, 5))
+    SE['vgsvaridx'] = list(range(0, 10000))
     SE['usepmu'] = 1
     SE['limitsample'] = 1
     global dimec
@@ -26,19 +26,26 @@ def stream_event_examp():
     Event['duration'] = [5, 6, 7, 5, 6, 7, 5, 6, 7, 8, 9]
     Event['action'] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     Event['time'] = [10, 10, 10, 15, 15, 15, 20, 20, 20, 20, 20]
+    # Event['name'] = ['Bus']
+    # Event['id'] = [1]
+    # Event['duration'] = [5]
+    # Event['action'] = [0]
+    # Event['time'] = [10]
+
     global dimec
     JsonEvent = json.dumps(Event)
     dimec.send_var('sim', 'Event', JsonEvent)
 
 if __name__ == '__main__':
-    ltb_stream_SE_examp()
     modelstate = acquire.connectToModel('IEEE39Acq', 'phasor01_IEEE39')
+    ltb_stream_SE_examp()
     stream_event_examp()
     while(modelstate == OpalApiPy.MODEL_RUNNING):
-        vars = dimec.sync()
+    # while(True):
+        vars = dimec.sync(1)
         if vars:
             mods = dimec.workspace
-            pprint.pprint(mods, None, 1, 40, 10)
+            #pprint.pprint(mods, None, 1, 40, 10)
         sleep(0.01)
         modelstate, realtimemode = OpalApiPy.GetModelState()
 
