@@ -125,26 +125,36 @@ def ltb_stream(Vgsinfo, acq_thread_groups, groups):
 
                     return True
 
-def event_handler(EventQueue, sim_time):
-    """Manages ordered events by time sequence and removes event from queue when triggered"""
+def event_handler(EventQueue, acq_thread_groups):
+    """Manages ordered events by time sequence and removes event from queue when triggered
+    Handles signals with names following the convention signal(#) where # is the signal device index in
+    the model
+
+    Note: If Only one device signal exists, it is named signal without #. Handling such a case can be changed in the
+    model, or an update to change signal name if it is unique must be added to this function"""
+
     event_times = []
     event_times.extend(EventQueue)
     signals = []
     vals = []
+    sim_time = acq_thread_groups[1].simulationTime
     if abs(sim_time-event_times[0]) <= 0.01667:
-        print "Trigger event at ", sim_time
         trig_event = EventQueue.popitem(False)
-        times = [event_times[0]] * (len(trig_event) + 1)
+        # times = [event_times[0]] * (len(trig_event) + 1)
         for sig in trig_event[1:][0]:
             signals.append(sig[1])
             vals.append(sig[3])
         try:
             OpalApiPy.SetSignalsByName(tuple(signals), tuple(vals))
+            logging.log(1, '<Event triggered at {}>'.format(acq_thread_groups[1].simulationTime))
+            print "Trigger event at ", acq_thread_groups[1].simulationTime
+
         except:
             logging.error("<Signal input name error. No signals set>")
         return EventQueue, True
     else:
         return EventQueue, False
+
 
 def ltb_stream_sim(SysParam, Varheader, Idxvgs, project, model, sim_stop):
 
@@ -180,13 +190,12 @@ def ltb_stream_sim(SysParam, Varheader, Idxvgs, project, model, sim_stop):
                     ltb_stream(Vgsinfo, acq_thread_groups, groups)
                     ret_thread_groups[1].new_data = False
                 if len(EventQueue) != 0:
-                    EventQueue, trigger = event_handler(EventQueue, acq_thread_groups[1].simulationTime)
-                    if trigger is True:
-                        logging.log(1, '<Event triggered at {}>'.format(acq_thread_groups[1].simulationTime))
+                    EventQueue, trigger = event_handler(EventQueue, acq_thread_groups)
                 else:
                     logging.log(1, '<Event queue empty at {}>'.format(acq_thread_groups[1].simulationTime))
             modelState, realTimeMode = OpalApiPy.GetModelState()
     print('Sim Ended')
     #acquire.fullDisconnect()
+    dimec.exit()
     OpalApiPy.Disconnect()
     return True
