@@ -175,7 +175,7 @@ class acquisitionThreadReturn(threading.Thread):
         self.acq_wait = threading.Event()
         acq_wait.set()
         self.kill = threading.Event()
-        kill.set()
+        #kill.set()
         self.condition = condition
         new_data = False
         self.new_data = new_data
