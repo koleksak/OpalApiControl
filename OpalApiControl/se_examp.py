@@ -23,9 +23,9 @@ def stream_event_examp():
     Event = {}
     Event['name'] = ['Bus', 'Bus', 'Bus', 'Line', 'Line', 'Line', 'Syn', 'Syn', 'Syn', 'Syn', 'Syn']
     Event['id'] = [1, 2, 3, 1, 2, 3, 1, 2, 3, 4, 5]
-    Event['duration'] = [5, 6, 7, 5, 6, 7, 5, 6, 7, 8, 9]
+    Event['duration'] = [0.2, 0.3, 0.4, 0.1, 0.2, 0.3, 1, 1, 1 , 1, 1]
     Event['action'] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    Event['time'] = [10, 10, 10, 15, 15, 15, 20, 20, 20, 20, 20]
+    Event['time'] = [2, 2, 2, 3, 3, 3, 5, 5, 5, 5, 5]
     # Event['name'] = ['Bus']
     # Event['id'] = [1]
     # Event['duration'] = [5]
@@ -48,6 +48,7 @@ if __name__ == '__main__':
             #pprint.pprint(mods, None, 1, 40, 10)
         sleep(0.01)
         modelstate, realtimemode = OpalApiPy.GetModelState()
+    dimec.exit()
 
 
 
