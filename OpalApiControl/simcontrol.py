@@ -226,7 +226,6 @@ class SimControl(object):
         vals = []
         eventTimes = []
         trig_event = eventQueue.popitem(False)
-        # times = [event_times[0]] * (len(trig_event) + 1)
         for sig in trig_event[1:][0]:
             signals.append(sig[1])
             vals.append(sig[3])
@@ -235,8 +234,13 @@ class SimControl(object):
             logging.log(1, '<Event triggered at {}>'.format(self.simulationTime))
         except:
             logging.error("<Signal input name error. No signals set>")
-        eventTimes.extend(eventQueue)
-        return eventQueue, eventTimes
+
+        # if eventQueue is now empty,
+        if bool(eventQueue) is False:
+            return eventQueue, 0
+        else:
+            eventTimes.extend(eventQueue)
+            return eventQueue, eventTimes
 
     @staticmethod
     def get_system_control(state=None):

@@ -113,6 +113,7 @@ class Streaming(object):
             event_params = [start, end, signal, signame, value]
             self.eventQueue.update(self.add_event_signal(event_params, event_dict))
             self.eventTimes.extend(self.eventQueue)
+            self.eventItems = True
 
     def add_event_signal(self, event_params, event_dict):
         """Adds event signal parameters to event_queue to be sent to ePHASORsim input controls
