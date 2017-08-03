@@ -10,7 +10,7 @@ setup(name='OpalApiControl',
       description='OPAL-RT RT-LAB API Controller',
       author='Kellen Oleksak',
       url='https://github.com/koleksak/OpalApiControl',
-      packages=['OpalApiControl'], install_requires=['dime']
+      packages=['OpalApiControl'], install_requires=['dime', 'openpyxl']
       )
 
 
