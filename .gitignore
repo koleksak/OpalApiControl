@@ -3,3 +3,15 @@
 /dataoutCsv.py
 /matplot
 /OpalApiFormatting
+/OpalApiFormat/39b.dyr
+/OpalApiFormat/39b.raw
+/OpalApiFormat/psse32.py
+/OpalApiFormat/sim.py
+/OpalApiFormat/stream.py
+/OpalApiFormat/varreqs.py
+idxtest.py
+se.m
+se_examp.py
+streamTest1.py
+threadTest1.py
+pyqtLocalExampOut.py
