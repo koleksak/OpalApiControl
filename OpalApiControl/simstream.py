@@ -27,6 +27,7 @@ class Streaming(object):
         self.lastDevices = list()
         self.eventQueue = OrderedDict()
         self.eventTimes = []
+        self.eventItems = False
 
     def start_dime(self):
         if self._dime_started:
@@ -89,11 +90,15 @@ class Streaming(object):
     def handle_event(self, Event):
         """Handle Fault, Breaker, Syn and Load Events"""
         for key in Event.keys():
-            if type in (int, float) or (int, str, unicode):
+            if type(Event[key]) is (int, float, str, unicode):
                 Event[key] = [Event[key]]
+                Event[key] = Event[key][0].tolist()
+            elif type(Event[key]) is (list):
+                continue
             else:
-                logging.warning('Unknown Event key type for <{}>'.format(key))
+                Event[key] = Event[key][0].tolist()
         event_dict = OrderedDict()
+        signame = ''
         for item in range(0, len(Event['id'])):
             if Event['name'][item] == 'Bus':
                 signame = 'bus_fault'
@@ -101,15 +106,14 @@ class Streaming(object):
                 signame = 'line_fault'
             if Event['name'][item] == 'Syn':
                 signame = 'syn_status'
-
+            index = int(Event['id'][item])
             signal = signame + '(' + str(index) + ')'
             start = Event['time'][item]
             if Event['duration'] == 0:
                 end = 1000000
             else:
                 end = start + Event['duration'][item]
-            index = Event['id'][item]
-            value = Event['action'][item]
+            value = int(Event['action'][item])
             event_params = [start, end, signal, signame, value]
             self.eventQueue.update(self.add_event_signal(event_params, event_dict))
             self.eventTimes.extend(self.eventQueue)
@@ -126,19 +130,28 @@ class Streaming(object):
         value = event_params[4]
 
         if start in self.eventQueue.keys():
-            self.eventQueue[start].append([start, signal, signame, value])
+            self.eventQueue[start].append([start, signal, signame, value, 'start'])
         else:
             # start_events[start] = [start, signal, signame, value]
-            event_dict[start] = [[start, signal, signame, value]]
+            event_dict[start] = [[start, signal, signame, value, 'start']]
         logging.info('Adding Event start at <{}> to Event Queue'.format(start))
         if end in self.eventQueue.keys():
-            self.eventQueue[end].append([end, signal, signame, ~value])
+            self.eventQueue[end].append([end, signal, signame, ~value, 'end'])
         else:
             # end_events[end] = [end, signal, signame, not value]
-            event_dict[end] = [[end, signal, signame, ~value]]
+            event_dict[end] = [[end, signal, signame, ~value, 'end']]
 
-        logging.info('Adding Event end at <{}> to Event Queue'.format(start))
+        logging.info('Adding Event end at <{}> to Event Queue'.format(end))
         return event_dict
+
+    def check_events(self, simulationTime,t_acq):
+        if(self.eventItems):
+            if abs(simulationTime - self.eventTimes[0]) <= (0.5 * t_acq):
+                return True
+            else:
+                return False
+        else:
+            return False
 
     def sync_and_handle(self):
         """Sync until the queue is empty"""

@@ -52,9 +52,8 @@ def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None)
             continue
         else:
             streaming.vars_to_modules(t, k, varout)
-            if streaming.eventTimes != 0:
-                if abs(sim.simulationTime - streaming.eventTimes[0]) >= (0.5 * sim.t_acq):
-                    streaming.eventQueue, streaming.eventTimes = sim.send_event_signals(streaming.eventQueue)
+            if(streaming.check_events(sim.simulationTime,sim.t_acq)):
+                streaming.eventQueue, streaming.eventTimes, streaming.eventItems = sim.send_event_signals(streaming.eventQueue)
 
 
     streaming.send_done()

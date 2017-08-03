@@ -77,9 +77,9 @@ class SimControl(object):
                 self._loaded = True
                 self._started = True
                 retval = True
-                logging.info("Connection to running model {} successful.".format(self.model))
+                logging.info("Connection to RUNNING model {} successful.".format(self.model))
             except:
-                logging.error("Failed to connect to running model {}.".format(self.model))
+                logging.error("Failed to connect to RUNNING model {}.".format(self.model))
 
         elif self.isLoadable:
             try:
@@ -95,6 +95,16 @@ class SimControl(object):
             self._loaded = True
             self.update_states()
             retval = True
+            logging.info("Connection to LOADED model {} successful.".format(self.model))
+
+        elif self.isPaused:
+            OpalApiPy.LoadConsole()
+            self._loaded = True
+            self.update_states()
+            retval = True
+            logging.info("Connection to PAUSED model {} successful.".format(self.model))
+
+
         else:
             logging.error('Compile and assign model before loading or running.')
 
@@ -102,6 +112,7 @@ class SimControl(object):
 
     def start(self):
         """Obtain control and start the simulation"""
+
         if self._started:
             return True
 
@@ -126,23 +137,12 @@ class SimControl(object):
             logging.info("Model Running")
         self._started = True
 
-    def acquisition_signals_parse(self):
-        """Parses acquisition signals from main signal description list. Designed for use with setting
-        IdxVgs and Varheader in ePhasorsim acquisition port selection"""
-        ePHASsignals = list(OpalApiPy.GetSignalsDescription())
-        ephasor_port_out = []
-        for signal in ePHASsignals:
-            if signal[0] == 0:
-                ephasor_port_out.append(signal[3])
-        OpalApiPy.Disconnect()
-        return ephasor_port_out
-
     def varheader_idxvgs(self):
         """Parse ePHASORsim output ports and generate Varheader and Idxvgs"""
         Varheader = []
         Idxvgs = dict()
 
-        self._allSignals = self.acquisition_signals_parse()
+        self._allSignals = list(OpalApiPy.GetSignalsDescription())
 
         for signal in self._allSignals:
             if signal[0] == 0:
@@ -221,7 +221,9 @@ class SimControl(object):
         return ret_t, int(ret_t/self.t_acq), retval
 
     def send_event_signals(self, eventQueue):
-        """Sends event input data to running ePHASORsim model"""
+        """Sends event input data to running ePHASORsim model
+        trig_event[1][0] = [start/end time, signalname, value, start/end]"""
+
         signals = []
         vals = []
         eventTimes = []
@@ -230,17 +232,20 @@ class SimControl(object):
             signals.append(sig[1])
             vals.append(sig[3])
         try:
-            OpalApiPy.SetSignalsByName(tuple(signals), tuple(vals))
-            logging.log(1, '<Event triggered at {}>'.format(self.simulationTime))
+            sigs = tuple(signals)
+            vals = tuple(vals)
+            OpalApiPy.SetSignalsByName(sigs, vals)
+            logging.info('Event {} for {} triggered at <{}>'.format(trig_event[1][0][4], sigs, self.simulationTime))
         except:
             logging.error("<Signal input name error. No signals set>")
 
         # if eventQueue is now empty,
         if bool(eventQueue) is False:
-            return eventQueue, 0
+            eventTimes = []
+            return eventQueue, eventTimes, False
         else:
             eventTimes.extend(eventQueue)
-            return eventQueue, eventTimes
+            return eventQueue, eventTimes, True
 
     @staticmethod
     def get_system_control(state=None):
@@ -301,3 +306,6 @@ class SimControl(object):
     def isLoaded(self):
         return True if self._modelState == OpalApiPy.MODEL_LOADED else False
 
+    @property
+    def isPaused(self):
+        return True if self._modelState == OpalApiPy.MODEL_PAUSED else False
