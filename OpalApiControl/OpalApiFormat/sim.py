@@ -22,7 +22,7 @@ class Simulate(threading.Thread):
         self.model = model
         self.rawfile = rawfile
         self.dyrfile = dyrfile
-        SysParam, Varheader, Idxvgs, project, model = psse320.init_pf_to_stream(self.project, self.model, self.rawfile, self.dyrfile)
+        SysParam, Varheader, Idxvgs, project, model = psse32.init_pf_to_stream(self.project, self.model, self.rawfile, self.dyrfile)
         # SysParam, Varheader, Idxvgs, project, model = psse32.init_pf_to_stream()
         self.SysParam = SysParam
         self.Varheader = Varheader
@@ -32,10 +32,9 @@ class Simulate(threading.Thread):
         #acq_wait = threading.Event()
         #self.acq_wait = acq_wait
 
-
     def run(self):
         self.sim_stop.set()
-        stream.ltb_stream_sim(self.SysParam, self.Idxvgs, self.Varheader, self.project,
+        stream.ltb_stream_sim(self.SysParam,  self.Varheader, self.Idxvgs, self.project,
                               self.model, self.sim_stop)
         print"Simulation Successful"
 
@@ -44,10 +43,10 @@ class Simulate(threading.Thread):
 
 if __name__ == "__main__":
     # simu = Simulate(True, 'IEEE118', 'phasor06_IEEE118', 'ieee118b', 'ieee118b')
-    simu = Simulate(True, 'IEEE39Acq', 'phasor01_IEEE39', 'ieee118b', 'ieee118b')
+    simu = Simulate(True, 'IEEE39Acq', 'phasor01_IEEE39', '39b_R1', '39b')
     simu.start()
     #sleep(3)
-    exec (open('C:/Users/opalrt/repos/OpalApiControl/OpalApiControl/se_examp.py').read())
+    # exec (open('C:/Users/opalrt/repos/OpalApiControl/OpalApiControl/se_examp.py').read())
     while(simu.is_alive()):
         pass
 

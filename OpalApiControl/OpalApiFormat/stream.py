@@ -15,7 +15,7 @@ from time import sleep
 import json
 from collections import OrderedDict
 import threading
-
+from numpy import array
 
 
 global All_Data
@@ -100,30 +100,31 @@ def ltb_stream(Vgsinfo, acq_thread_groups, groups):
     """Sends requested data indices for devices to the LTB server using dime"""
 
     if len(Vgsinfo) == 0:
-        #logging.warning('<No Device Requests>')
+        # logging.warning('<No Device Requests>')
         return False
 
     else:
-        mods = Vgsinfo['dev_list']
-        for dev in mods:
+        for dev in Vgsinfo.keys():
             if dev == 'sim':
                 continue
-            idx = Vgsinfo[dev]['vgsvaridx'][-1]
+            idx = Vgsinfo[dev]['vgsvaridx']
             try:
                 var_data = acq_data()
+                var_data = array(var_data)
             except:
                 logging.error('<No simulation data available>')
             else:
                 for num in groups:
-                    Varvgs['vars'] = var_data[idx[0]:len(idx)]            #Need to add modified data
-                    Varvgs['accurate'] = var_data[idx[0]:len(idx)]        #Accurate streaming data
+                    Varvgs['vars'] = var_data[to_python_idx(idx)]            # Need to add modified data
+                    Varvgs['accurate'] = var_data[to_python_idx(idx)]        # Accurate streaming data
                     Varvgs['t'] = acq_thread_groups[num].simulationTime
                     Varvgs['k'] = acq_thread_groups[num].simulationTime/0.03333
-                    JsonVarvgs = json.dumps(Varvgs)
-                    dimec.send_var(dev, 'Varvgs', JsonVarvgs)
+                    # JsonVarvgs = json.dumps(Varvgs)
+                    dimec.send_var(dev, 'Varvgs', Varvgs)
                     logging.log(1, '<Data streamed to {} at {}>'.format(dev, Varvgs['t']))
 
                     return True
+
 
 def event_handler(EventQueue, acq_thread_groups):
     """Manages ordered events by time sequence and removes event from queue when triggered
@@ -162,7 +163,9 @@ def ltb_stream_sim(SysParam, Varheader, Idxvgs, project, model, sim_stop):
     global Event
     Event = {}
     print"Waiting for DiME Connection"
+
     dimec = set_dime_connect('sim', 'tcp://127.0.0.1:5678')
+
     print"DiME Connected"
     dimec.broadcast('Varheader', Varheader)
     dimec.broadcast('Idxvgs', Idxvgs)
@@ -195,7 +198,13 @@ def ltb_stream_sim(SysParam, Varheader, Idxvgs, project, model, sim_stop):
                     logging.log(1, '<Event queue empty at {}>'.format(acq_thread_groups[1].simulationTime))
             modelState, realTimeMode = OpalApiPy.GetModelState()
     print('Sim Ended')
-    #acquire.fullDisconnect()
+    dimec.send_var('geovis', 'DONE', 1)
+    # acquire.fullDisconnect()
     dimec.exit()
     OpalApiPy.Disconnect()
     return True
+
+
+def to_python_idx(idx):
+    """Offset idx by -1 for MATLAB indices"""
+    return [i-1 for i in idx]
