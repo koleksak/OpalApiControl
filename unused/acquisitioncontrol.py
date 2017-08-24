@@ -8,18 +8,17 @@
 
 
 
-#***************************************************************************************
-# Modules
-#***************************************************************************************
-from OpalApiControl.system import acquire
-import os
-import OpalApiPy
-import threading
-import multiprocessing
-from time import sleep
 import logging
+import os
+import threading
+from time import sleep
 
+import OpalApiPy
 
+# ***************************************************************************************
+# Modules
+# ***************************************************************************************
+from unused import acquire
 
 #***************************************************************************************
 # Globals
@@ -237,7 +236,7 @@ class StartAcquisitionThreadWithTime(threading.Thread,DataList):    #REMOVE
 
     def run(self):
         print "Thread- " + self.threadName
-        acquire.connectToModel(self.project,self.model)
+        acquire.connectToModel(self.project, self.model)
         modelState,realTimeFactor = OpalApiPy.GetModelState()
         clockTime = simulationTimeThread(self.project,self.model,self.interval)
         # clockTime.setDaemon(True)
@@ -327,7 +326,7 @@ class simulationTimeThread(threading.Thread):
 def getSyncClockPath(project,model):   #ADDED To acquisition thread class CAN POSSIBLY REMOVE
     """Returns model clock path for asynchronous acquisition"""
 
-    acquire.connectToModel(project,model)
+    acquire.connectToModel(project, model)
     projectPath, modelName = OpalApiPy.GetCurrentModel()
     modelName = os.path.splitext(modelName)
     clockpath = modelName[0] + '/sm_master/clock/port1'

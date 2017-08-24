@@ -2,26 +2,32 @@
 Idxvgs, and varheader are created from ePHASORsim output signal ports"""
 
 
-import os
-
-from OpalApiFormat import psse32_new
-
 import logging
-logging.basicConfig(level=logging.INFO)
+import os
+import sys
+
+from OpalApiControl.parser import psse
 
 
 class LTBSetup(object):
     """Class for parsing files and create SysParam data for LTB streaming"""
     def __init__(self, raw='', dyr='', xls='', path='', simObject=None):
+        if not os.path.isdir(path):
+            logging.error('Path <{}> does not exist.'.format(path))
+            sys.exit(1)
+
         assert raw or xls
-        self.raw = raw
-        self.xls = xls
-        self.dyr = dyr
+        self.raw = None
+        self.xls = None
+        self.dyr = None
         self.sim = simObject
 
-        self._rawPath = os.path.join(path, raw)
-        self._xlsPath = os.path.join(path, xls)
-        self._dyrPath = os.path.join(path, dyr)
+        if raw:
+            self.raw = os.path.join(path, raw)
+        if xls:
+            self._xlsPath = os.path.join(path, xls)
+        if dyr:
+            self.dyr = os.path.join(path, dyr)
 
         self.SysParam = None
         self.Varheader = None
@@ -33,5 +39,4 @@ class LTBSetup(object):
         self.Varheader, self.Idxvgs = self.sim.varheader_idxvgs()
 
     def get_sysparam(self):
-        self.SysParam = psse32_new.init_pf_to_stream(self._rawPath, self._dyrPath)
-
+        self.SysParam = psse.init_pf_to_stream(self.raw, self.dyr)

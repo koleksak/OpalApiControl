@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-paramKeys = ['Fault', 'Breaker', 'Pmu', 'Syn', 'Exc', 'Tg', 'Pss', 'Bus', 'Busfreq', 'SW', 'PV', 'PQ', \
+paramKeys = ['Fault', 'Breaker', 'Pmu', 'Syn', 'Exc', 'Tg', 'Pss', 'Bus', 'Busfreq', 'SW', 'PV', 'PQ',
              'Shunt', 'Line', 'nBus', 'nLine', 'Wind', 'Dfig']
 
 

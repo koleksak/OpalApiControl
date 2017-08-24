@@ -1,16 +1,13 @@
 """Connects simulator to RT-lab and controls model states.
 Handles the control of the ePHASORsim model for data acquisition"""
 
+import logging
 import os
-from numpy import array
 
 import OpalApiPy
 import RtlabApi
-
 from consts import *
-
-import logging
-logging.basicConfig(level=logging.INFO)
+from numpy import array
 
 
 class SimControl(object):
@@ -29,6 +26,7 @@ class SimControl(object):
         self._modelState = None
         self._realTimeMode = None
         self._allSignals = None
+        self.simulationTime = 0.
 
         # Internal states - do not modify
         self._open = False
@@ -126,7 +124,7 @@ class SimControl(object):
         OpalApiPy.ExecuteConsole()
         logging.info("Console is executed")
 
-        OpalApiPy.Execute(1) # TODO: what the argument is
+        OpalApiPy.Execute(1) #(Argument * model time factor) = Execution Rate. 1 for real-time.
         logging.info("Model <{}> is executed".format(self.model))
 
         self.update_states()
@@ -210,42 +208,23 @@ class SimControl(object):
                 elif self.simulationTime - nextAcqTime < sample_time_error:
                     retval = sigVals
                     self._lastAcqTime = self.simulationTime
-                    logging.debug('Data acquired at t = {}'.format(self.simulationTime))
-                else:
-                    retval = sigVals
-                    self._lastAcqTime = self.simulationTime
-                    logging.warning('Acquisition sample step missed at t = {}'.format(self.simulationTime))
-        else:
-            logging.error('Failed to acquire data. Model is not running.')
+
+                    _, rem = divmod(self._lastAcqTime, 5)  # show info every 5 seconds
+                    if abs(rem) < self.t_acq:
+                        logging.debug('Data acquired at t = {}'.format(self.simulationTime))
+                        
+                    ret_t = self.simulationTime
 
         return ret_t, int(ret_t/self.t_acq), retval
 
-    def send_event_signals(self, eventQueue):
-        """Sends event input data to running ePHASORsim model
-        trig_event[1][0] = [start/end time, signalname, value, start/end]"""
-
-        signals = []
-        vals = []
-        eventTimes = []
-        trig_event = eventQueue.popitem(False)
-        for sig in trig_event[1:][0]:
-            signals.append(sig[1])
-            vals.append(sig[3])
+    def send_event_signals(self, signal, value):
         try:
-            sigs = tuple(signals)
-            vals = tuple(vals)
+            sigs = tuple(signal)
+            vals = tuple(value)
             OpalApiPy.SetSignalsByName(sigs, vals)
-            logging.info('Event {} for {} triggered at <{}>'.format(trig_event[1][0][4], sigs, self.simulationTime))
+            logging.info('<{}> Event triggered at t = {}'.format(len(sigs), self.simulationTime))
         except:
             logging.error("<Signal input name error. No signals set>")
-
-        # if eventQueue is now empty,
-        if bool(eventQueue) is False:
-            eventTimes = []
-            return eventQueue, eventTimes, False
-        else:
-            eventTimes.extend(eventQueue)
-            return eventQueue, eventTimes, True
 
     @staticmethod
     def get_system_control(state=None):

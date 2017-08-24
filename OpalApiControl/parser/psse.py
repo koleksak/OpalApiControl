@@ -4,7 +4,6 @@ import os
 import re
 
 from settings import Settings
-import idxvgs
 
 NEVER = 60
 CRITICAL = 50
@@ -963,7 +962,6 @@ def init_pf_to_stream(rawfile, dyrfile):
 
     Settings.set_sys_params()
 
-    # Idxvgs, Varheader = idxvgs.set_ephasor_ports(project, model)
     logging.info('PSS/E raw data parsing completed')
     return Settings.SysParam
 
