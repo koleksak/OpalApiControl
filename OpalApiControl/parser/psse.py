@@ -152,8 +152,8 @@ def read(file):
               -122.262993, -121.021929, -119.450452, -119.450452, -121.779037, -122.276225, -122.135718, -121.935718,
               -121.935718, -121.24000, -121.18379, -121.10879, -121.27379, -121.23979]
 
-    for idx, line in enumerate(Settings.Bus):
-        line.extend([xcoord[idx], ycoord[idx]])
+    #for idx, line in enumerate(Settings.Bus):
+    #    line.extend([xcoord[idx], ycoord[idx]])
 
     maxV = 1.1
     minV = 0.9
@@ -400,6 +400,7 @@ def add_dyn(model, data):
 
     if model == 'GENCLS':
         busidx = data[0]
+        id = data[2]
         data = data[3:]
         if busidx in Settings.SynStore.keys():
             dev = 'PV'
@@ -428,9 +429,12 @@ def add_dyn(model, data):
                     EMPTY, EMPTY, EMPTY, EMPTY, param['M'], param['D'],
                     EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, param['status']]
         Settings.Syn.append(psatlist)
+        Settings.DevicesAtBus[busidx].append({'Bus': busidx , 'Id' : id})
+
 
     elif model == 'GENROU':
         busidx = data[0]
+        id = data[2]
         data = data[3:]
         if busidx in Settings.SynStore.keys():
             dev = 'PV'
@@ -468,10 +472,13 @@ def add_dyn(model, data):
                     param['xq1'], param['xq2'], param['Tq10'], param['Tq20'], param['M'], param['D'],
                     EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, param['status']]
         Settings.Syn.append(psatlist)
+        Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
+
 
     # CONFIRM EXCITER DATA, NEED SOME CALCULATIONS
     elif model == 'EXST1':
         busidx = data[0]
+        id = data[2]
         data = data[3:]
         if busidx in Settings.SynStore.keys():
             dev = 'PV'
@@ -514,10 +521,12 @@ def add_dyn(model, data):
                     param['MTC'], param['1stCC'], param['2ndCC'], param['status']]
 
         Settings.Exc.append(psatlist)
+        Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
 
 
     elif model == 'IEEEX1':
         busidx = data[0]
+        id = data[2]
         data = data[3:]
         if busidx in Settings.SynStore.keys():
             dev = 'PV'
@@ -563,9 +572,12 @@ def add_dyn(model, data):
                     param['MTC'], param['1stCC'], param['2ndCC'], param['status']]
 
         Settings.Exc.append(psatlist)
+        Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
+
 
     elif model == 'ESST3A':
         busidx = data[0]
+        id = data[2]
         data = data[3:]
         if busidx in Settings.SynStore.keys():
             dev = 'PV'
@@ -616,9 +628,12 @@ def add_dyn(model, data):
                     param['MTC'], param['1stCC'], param['2ndCC'], param['status']]
 
         Settings.Exc.append(psatlist)
+        Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
+
 
     elif model == 'ESST4B':
         busidx = data[0]
+        id = data[2]
         data = data[3:]
         if busidx in Settings.SynStore.keys():
             dev = 'PV'
@@ -664,11 +679,13 @@ def add_dyn(model, data):
                     param['MTC'], param['1stCC'], param['2ndCC'], param['status']]
 
         Settings.Exc.append(psatlist)
+        Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
+
 
     elif model == 'IEEEG1':
-        global govcount
-        govcount += 1
+        Settings.govcount += 1
         busidx = data[0]
+        id = data[2]
         data = data[5:]
         if busidx in Settings.SynStore.keys():
             dev = 'PV'
@@ -699,11 +716,14 @@ def add_dyn(model, data):
                     param['govTC'], param['servoTC'], param['tgTC'], param['pfTC'], param['rTC'], param['status']]
 
         Settings.Tg.append(psatlist)
+        Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
+
 
     elif model == 'IEE2ST':
-        global pss2count
-        pss2count += 1
+
+        Settings.pss2count += 1
         busidx = data[0]
+        id = data[2]
         data = data[3:]
         if busidx in Settings.SynStore.keys():
             dev = 'PV'
@@ -719,7 +739,7 @@ def add_dyn(model, data):
         param = {'bus': busidx,
                  'gen': gen_idx,
                  'type': 1,
-                 'AVR': pss2count,
+                 'AVR': Settings.pss2count,
                  'PSSmodel': 1,
                  'PSSin': 1,
                  'Vmaxsout': EMPTY,
@@ -760,11 +780,13 @@ def add_dyn(model, data):
                     param['FVthresh'], param['RSthresh'], param['switch'], param['status']]
 
         Settings.Pss.append(psatlist)
+        Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
+
 
     elif model == 'IEEEST':
-        global pss1count
-        pss1count += 1
+        Settings.pss1count += 1
         busidx = data[0]
+        id = data[2]
         data = data[3:]
         if busidx in Settings.SynStore.keys():
             dev = 'PV'
@@ -780,7 +802,7 @@ def add_dyn(model, data):
         param = {'bus': busidx,
                  'gen': gen_idx,
                  'type': 0,
-                 'AVR': pss1count,
+                 'AVR': Settings.pss1count,
                  'PSSmodel': 1,
                  'PSSin': 1,
                  'Vmaxsout': EMPTY,
@@ -823,11 +845,13 @@ def add_dyn(model, data):
                     param['Kp'], param['Kv'], param['Vamax'], param['Vamin'], param['Vsmax'], param['Vsmin'],
                     param['FVthresh'], param['RSthresh'], param['switch'], param['status']]
 
-        Settings.PssStore.append(psatlist)
+        Settings.Pss.append(psatlist)
+        Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
 
 
     elif model == 'DFIG':
         busidx = data[0]
+        id = 1      #Id number defaults to 1 for Wind Devices for now
         data = data[2:]
         if busidx in Settings.BusStore.keys():
             pass
@@ -867,10 +891,13 @@ def add_dyn(model, data):
                     param['nGB'], param['pmax'], param['pmin'], param['qmin'], param['qmin'], param['status']]
 
         Settings.Dfig.append(psatlist)
+        Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
+
 
     elif model == 'WTE':
         # Type 1 and 2
         busidx = data[0]
+        id = 1
         data = data[2:]
         if busidx in Settings.BusStore.keys():
             pass
@@ -902,11 +929,13 @@ def add_dyn(model, data):
 
         Settings.WindStore[busidx].update(param)
         Settings.Wind.append(psatlist)
+        Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
 
 
     elif model == 'WTT':
         # Type 1 and 2
         busidx = data[0]
+        id = 1
         data = data[3:]
         if busidx in Settings.BusStore.keys():
             pass
@@ -923,6 +952,7 @@ def add_dyn(model, data):
         psatlist = [param['H'], param['Damp'], param['Htf'], param['Freq1'], param['Dshaft']]
         Settings.WindStore[busidx] = param
         Settings.Wind.append(psatlist)
+        Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
 
     else:
         logging.warning('Skipping unsupported mode <{}> on bus {}'.format(model, data[0]))
@@ -963,7 +993,7 @@ def init_pf_to_stream(rawfile, dyrfile):
     Settings.set_sys_params()
 
     logging.info('PSS/E raw data parsing completed')
-    return Settings.SysParam
+    return Settings
 
 
 

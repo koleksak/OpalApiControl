@@ -29,9 +29,11 @@ class LTBSetup(object):
         if dyr:
             self.dyr = os.path.join(path, dyr)
 
+        self.Settings = None
         self.SysParam = None
         self.Varheader = None
         self.Idxvgs =None
+
 
     def get_varheader_idxvgs(self):
         if not self.sim:
@@ -39,4 +41,5 @@ class LTBSetup(object):
         self.Varheader, self.Idxvgs = self.sim.varheader_idxvgs()
 
     def get_sysparam(self):
-        self.SysParam = psse.init_pf_to_stream(self.raw, self.dyr)
+        self.Settings = psse.init_pf_to_stream(self.raw, self.dyr)
+        self.SysParam = self.Settings.SysParam
