@@ -7,7 +7,7 @@ from OpalApiControl.parser import psse
 from OpalApiControl.parser.settings import Settings
 
 if __name__ == '__main__':
-    path = '/Users/Kellen/Documents/UT/CURENT/WECC181/models/phasor03_PSSE'
+    path = 'C:/RT-LABv11_Workspace_New/WECC181/models/phasor03_PSSE'
     rawfile = os.path.join(path, 'Curent02_final_ConstZ.raw')
     dyrfile = os.path.join(path, 'Curent02_final.dyr')
     Settings = psse.init_pf_to_stream(rawfile, dyrfile)
