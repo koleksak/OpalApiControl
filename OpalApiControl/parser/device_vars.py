@@ -102,10 +102,11 @@ class DeviceModels():
         pins_sheet = self.ExcelPins.active
         pins_sheet.title = 'Pins'
 
-        for bus in self.BusVars.keys():
+        for bus in sorted(self.BusVars):
             for idx in self.BusVars[bus]:
                 for id in idx.keys():
                     tmprow = []
+                    row_init = []
                     celltemp = 'gen_' + str(bus) + '_' + str(id) + '/'
                     for var in idx[id]:
                         var_avail = var.split('.')
@@ -117,8 +118,11 @@ class DeviceModels():
                                 tmprow.append(cell)
                             else:
                                 continue
+                    row_init.append('outgoing')
+                    row_init.append( 'Gen_' + str(bus) + '_Vars')
+                    row_init.extend(tmprow)
                     self.ExcelTemp.append(tmprow)
-                    pins_sheet.append(tmprow)
+                    pins_sheet.append(row_init)
 
 
         # for cell_row in range(1, rows):
