@@ -28,15 +28,17 @@ def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None,
     simulink = os.path.join(path,project, 'simulink')
     models = os.path.join(path,project, 'models')
     if not os.path.isdir(simulink):
-        logging.error('Path <{}> does not exist.'.format(path))
-        #sys.exit(1)
+        logging.error('No <{}> directory found.'.format(simulink))
+        if not os.path.isdir(models):
+            logging.error('No <{}> directory found.'.format(models))
+            sys.exit(1)
+        else:
+            logging.info('Using <{}> directory'.format(models))
+            modelPath = models
     else:
+        logging.info('Using <{}> directory'.format(simulink))
         modelPath = simulink
-    if not os.path.isdir(models):
-        logging.error('Path <{}> does not exist.'.format(path))
-        sys.exit(1)
-    else:
-        modelPath = models
+
 
     sim_data = LTBSetup(raw=raw, dyr=dyr, xls=xls, path=modelPath, simObject=sim)
 
