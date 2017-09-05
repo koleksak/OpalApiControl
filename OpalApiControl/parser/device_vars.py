@@ -137,7 +137,7 @@ class DeviceModels():
         var_init = []
         row_init = []
         for bus in range(0, len(self.SysParam['Bus'])):
-            var_init.append(str(bus + 1) + str(var))
+            var_init.append('bus_' + str(bus + 1) + '/' + str(var))
         row_init.append('outgoing')
         row_init.append(str(var))
         row_init.extend(var_init)
