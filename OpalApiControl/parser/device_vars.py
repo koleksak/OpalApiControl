@@ -31,6 +31,8 @@ class DeviceModels():
         self.KeepVars = {'GENCLS': ['ANGLE', 'SLIP',],
                'GENROU': ['ANGLE', 'SLIP', 'Ed_p', 'Eq_p', 'PSI1_d', 'PSI2_q'],
                }
+        self.KeepVarsOrdered = defaultdict(list)
+        self.SynePHASORports = ['ANGLE','SLIP','Ed_p','Eq_p', 'PSI1_d', 'PSI2_q']
 
     def parse_opal_files(self,path):
         """Parses Individual opal files in FMU path for device model variables"""
@@ -94,8 +96,54 @@ class DeviceModels():
         """Creates excel pin rows for each variable for a device group and each bus containing the device"""
         pass
 
+    def create_excel_file_pins_vars(self):
+        """Creates excel pin rows for each var and its respective bus locations"""
 
-    def create_excel_file_pins(self):
+        fileout = self.filepath + 'pins.xlsx'
+        pins_sheet = self.ExcelPins.active
+        pins_sheet.title = 'Pins'
+
+        for bus in sorted(self.BusVars):
+            for idx in self.BusVars[bus]:
+                for id in idx.keys():
+                    tmprow = []
+                    row_init = []
+                    celltemp = 'gen_' + str(bus) + '_' + str(id) + '/'
+                    for var in idx[id]:
+                        var_avail = var.split('.')
+                        var_class = var_avail[0]
+                        var_name = var_avail[-1]
+                        for var_check in self.KeepVars.keys():
+                            if var_class.find(var_check.lower()) != -1 and var_name in self.KeepVars[var_check]:
+                                cell = celltemp + var
+                                self.KeepVarsOrdered[var_name].append(cell)
+                                #tmprow.append(cell)
+                            else:
+                                continue
+
+        for var in self.SynePHASORports:
+            row_init = []
+            row_init.append('outgoing')
+            row_init.append(var)
+            row_init.extend(self.KeepVarsOrdered[var])
+            self.ExcelTemp.append(row_init)
+            pins_sheet.append(row_init)
+
+        pins_sheet.append(self.add_var_to_excel_by_bus('Vmag'))
+        pins_sheet.append(self.add_var_to_excel_by_bus('Vang'))
+        self.ExcelPins.save(filename=fileout)
+
+    def add_var_to_excel_by_bus(self, var):
+        var_init = []
+        row_init = []
+        for bus in range(0, len(self.SysParam['Bus'])):
+            var_init.append(str(bus + 1) + str(var))
+        row_init.append('outgoing')
+        row_init.append(str(var))
+        row_init.extend(var_init)
+        return row_init
+
+    def create_excel_file_pins_bus(self): #TODO: arrange in order by var. Must be done for ports to match var list in SysPar
         """Creates excel pin rows for each bus and all of the variables associated with the device group"""
 
         fileout = self.filepath + 'pins.xlsx'
@@ -123,10 +171,6 @@ class DeviceModels():
                     row_init.extend(tmprow)
                     self.ExcelTemp.append(tmprow)
                     pins_sheet.append(row_init)
-
-
-        # for cell_row in range(1, rows):
-        #         pins_sheet.append([self.ExcelPins[cell_row]])
 
         self.ExcelPins.save(filename=fileout)
 
