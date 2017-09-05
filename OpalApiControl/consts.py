@@ -1,6 +1,6 @@
 SysPar = {
     'Bus': ['V', 'theta', 'P', 'Q', 'w_Busfreq'],
-    'Syn': ['p', 'q', 'delta', 'omega'],
+    'Syn': ['p', 'q', 'delta', 'omega','e1d', 'e1q','psid','psiq'],
     'Exc': ['vf', 'vm'],
     'Line': ['Pij', 'Pji', 'Qij', 'Qji', 'Iij', 'Iji', 'Sij', 'Sji'],
     'Tg': ['pm', 'wref']}
