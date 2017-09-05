@@ -25,7 +25,20 @@ def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None,
 
     sim = SimControl(project, model, path)
 
-    sim_data = LTBSetup(raw=raw, dyr=dyr, xls=xls, path=os.path.join(path, project, 'simulink'), simObject=sim)
+    simulink = os.path.join(path,project, 'simulink')
+    models = os.path.join(path,project, 'models')
+    if not os.path.isdir(simulink):
+        logging.error('Path <{}> does not exist.'.format(path))
+        #sys.exit(1)
+    else:
+        modelPath = simulink
+    if not os.path.isdir(models):
+        logging.error('Path <{}> does not exist.'.format(path))
+        sys.exit(1)
+    else:
+        modelPath = models
+
+    sim_data = LTBSetup(raw=raw, dyr=dyr, xls=xls, path=modelPath, simObject=sim)
 
     streaming = Streaming(name='sim', server=server, ltb_data=sim_data)
 
