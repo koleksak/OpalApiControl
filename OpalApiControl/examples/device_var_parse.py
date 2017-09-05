@@ -17,5 +17,5 @@ if __name__ == '__main__':
     devices.parse_opal_files(fmu_path)
     devices.find_devices_at_bus()
     devices.find_device_vars()
-    devices.create_excel_file_pins()
+    devices.create_excel_file_pins_vars()
     print 'devices added'
