@@ -142,7 +142,7 @@ class Streaming(object):
         for mod in self.moduleInfo.keys():
             idx = self.moduleInfo[mod]['vgsvaridx']
             # TODO: if idx is out of bound
-            values = varout
+            values = varout[idx]
             Varvgs = {'t': t,
                       'k': k,
                       'vars': array(values),
