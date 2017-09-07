@@ -1,11 +1,11 @@
-"""Extracts Bus Coordinate Data from a Bus data file in ePHASORsim WECC181 project workspace
+"""Extracts Bus Coordinate Data from a Bus data file in ePHASORsim project workspace.
 Bus data is then written to a new  (Name)Coords.raw file for the model to be parsed for SysParam Data.
 This file can replace the original raw file if no conflicts arise"""
 
 
 import logging
 import os
-import glob
+import sys
 
 
 class BusCoords():
@@ -14,14 +14,27 @@ class BusCoords():
         self.project = project
         self.path = path
         self.projectpath = os.path.join(path,project)
+        self.data_folder = ' '
+        try:
+            os.path.isdir(os.path.join(self.projectpath,'models'))
+        except:
+            # check simulink folder
+            try:
+                os.path.isdir(os.path.join(self.projectpath, 'simulink'))
+            except:
+                logging.error('<Bus Data File must be in ePHASORsim project folder>')
+                sys.exit(-1)
+            else:
+                self.data_folder = 'simulink'
+        else:
+            self.data_folder = 'models'
+
         self.BusDataFile = os.path.join(self.projectpath ,'models', BusDataFile)
         self.Coords = []
 
     def get_bus_coords(self):
         file = open(self.BusDataFile, 'r')
-
         for num, line in enumerate(file.readlines()):
-
             line = line.split('\t')
             line.pop()
             lon = line.pop()
@@ -30,7 +43,8 @@ class BusCoords():
             self.Coords.append(coords)
 
     def append_coords_to_raw(self):
-        rawfile = os.path.join(self.projectpath,'models', self.raw)
+
+        rawfile = os.path.join(self.projectpath, self.data_folder, self.raw)
         file = open(rawfile, 'r')
         temp = []
         for num, line in enumerate(file.readlines()):
@@ -47,7 +61,7 @@ class BusCoords():
         newfile = str(self.raw)
         newfile = newfile.split('.')
         newfile = newfile[0] + 'Coords.raw'
-        newfile = os.path.join(self.projectpath, 'models', newfile)
+        newfile = os.path.join(self.projectpath, self.data_folder, newfile)
         file = open(newfile, 'w')
         for line in temp:
             file.write(line)
