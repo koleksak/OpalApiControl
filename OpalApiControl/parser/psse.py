@@ -99,24 +99,41 @@ def read(file):
 
     for data in raw['bus']:
         """version 32:
-          0,   1,      2,     3,    4,   5,  6,   7,  8
-          ID, NAME, BasekV, Type, Area Zone Owner Va, Vm
+          0,   1,      2,     3,    4,   5,  6,   7,  8,   9,           10
+          ID, NAME, BasekV, Type, Area Zone Owner Va, Vm,  latitude     longitude
         """
         idx = data[0]
         ty = data[3]
         angle = data[8]
-        param = {'idx': idx,
-                 'name': data[1],
-                 'Vn': data[2],
-                 'type': data[3],
-                 'area': data[4],
-                 'voltage': data[7],
-                 'region': data[5],
-                 'owner': data[6],
-                 'angle': angle,
-                 }
-
-        psatlist = [data[0], data[2], data[7], angle, data[4], data[5]]
+        try:
+            lat = data[9]
+        except:
+            # logging.warning('<No Coordinates in .raw file>')
+            param = {'idx': idx,
+                     'name': data[1],
+                     'Vn': data[2],
+                     'type': data[3],
+                     'area': data[4],
+                     'voltage': data[7],
+                     'region': data[5],
+                     'owner': data[6],
+                     'angle': angle,
+                     }
+            psatlist = [data[0], data[2], data[7], angle, data[4], data[5]]
+        else:
+            param = {'idx': idx,
+                     'name': data[1],
+                     'Vn': data[2],
+                     'type': data[3],
+                     'area': data[4],
+                     'voltage': data[7],
+                     'region': data[5],
+                     'owner': data[6],
+                     'angle': angle,
+                     'latitude': data[9],
+                     'longitude': data[10]
+                     }
+            psatlist = [data[0], data[2], data[7], angle, data[4], data[5], data[9], data[10]]
         Settings.Bus.append(psatlist)
         Settings.BusNames.append(data[1])
         # Add BusSTORE Dictionary For Later Reference
