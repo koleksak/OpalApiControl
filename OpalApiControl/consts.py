@@ -1,10 +1,12 @@
 SysPar = {
-    'Bus': ['V', 'theta', 'P', 'Q', 'w_Busfreq'],
+    # 'Bus': ['V', 'theta', 'P', 'Q', 'w_Busfreq'],
+    'Bus': ['V', 'theta'],
     'Syn': ['p', 'q', 'delta', 'omega','e1d', 'e1q','psid','psiq'],
     'Exc': ['vf', 'vm'],
-    'Line': ['Pij', 'Pji', 'Qij', 'Qji', 'Iij', 'Iji', 'Sij', 'Sji'],
-    'Tg': ['pm', 'wref']}
-
+    'Line' : ['Iij', 'Iji'],
+    # 'Line': ['Pij', 'Pji', 'Qij', 'Qji', 'Iij', 'Iji', 'Sij', 'Sji'],
+    # 'Tg': ['pm', 'wref']
+    }
 
 HW_SYNC = 0
 SIMULATION = 1

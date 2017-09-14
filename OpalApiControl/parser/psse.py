@@ -278,10 +278,11 @@ def read(file):
 
     for data in raw['branch']:
         """
-        I,J,CKT,R,X,B,RATEA,RATEB,RATEC,GI,BI,GJ,BJ,ST,LEN,O1,F1,...,O4,F4
+        I,J,ID,R,X,B,RATEA,RATEB,RATEC,GI,BI,GJ,BJ,ST,LEN,O1,F1,...,O4,F4
         """
         param = {'bus1': data[0],
                  'bus2': data[1],
+                 'id' : data[2],
                  'r': data[3],
                  'x': data[4],
                  'b': data[5],
@@ -300,7 +301,8 @@ def read(file):
         psatlist = [param['bus1'], param['bus2'], param['rate_c'], param['Vn'], freq, EMPTY,
                     param['length'], param['r'], param['x'], param['b'], param['Ilim'], param['Plim'], EMPTY, EMPTY,
                     param['Slim'], param['status']]
-
+        Settings.Lineij.append([data[0], data[1], data[2]])
+        Settings.Lineji.append([data[1], data[0], data[2]])
         Settings.LineOrd[param['bus1']].append(psatlist)
         Settings.linecount += 1
 

@@ -30,6 +30,8 @@ class Settings(object):
         self.linecount = 0
         self.Line = []
         self.nLine = []
+        self.Lineij = []
+        self.Lineji = []
         self.freq = 0
         self.Pss = []
         self.pss1count = 0  #TODO: Make Dictionary for holding count of PSS devices and name as well as Tg

@@ -28,11 +28,11 @@ class DeviceModels():
         self.DeviceGroupCount = {}      #Counts the occurences of each Device Group
         self.ExcelPins = Workbook()
         self.ExcelTemp = []
-        self.KeepVars = {'GENCLS': ['ANGLE', 'SLIP',],
-               'GENROU': ['ANGLE', 'SLIP', 'Ed_p', 'Eq_p', 'PSI1_d', 'PSI2_q'],
+        self.KeepVars = {'GENCLS': ['ANGLE', 'SLIP','P_gen', 'Q_gen'],
+               'GENROU': ['ANGLE', 'P_gen', 'Q_gen', 'SLIP', 'Ed_p', 'Eq_p', 'PSI1_d', 'PSI2_q'],
                }
         self.KeepVarsOrdered = defaultdict(list)
-        self.SynePHASORports = ['ANGLE','SLIP','Ed_p','Eq_p', 'PSI1_d', 'PSI2_q']
+        self.SynePHASORports = ['ANGLE','SLIP','P_gen', 'Q_gen', 'Ed_p','Eq_p', 'PSI1_d', 'PSI2_q']
 
     def parse_opal_files(self,path):
         """Parses Individual opal files in FMU path for device model variables"""
@@ -91,11 +91,6 @@ class DeviceModels():
                         self.DeviceGroup[bus] = dev_find #Updates Devices to the proper order and naming of FMU
                         break
 
-
-    def arrange_bus_pins_by_var(self):
-        """Creates excel pin rows for each variable for a device group and each bus containing the device"""
-        pass
-
     def create_excel_file_pins_vars(self):
         """Creates excel pin rows for each var and its respective bus locations"""
 
@@ -123,14 +118,18 @@ class DeviceModels():
 
         for var in self.SynePHASORports:
             row_init = []
-            row_init.append('outgoing')
-            row_init.append(var)
-            row_init.extend(self.KeepVarsOrdered[var])
+            row_data = ['outgoing', var]
+            row_data.extend(self.KeepVarsOrdered[var])
+            row_init.extend(row_data)
+            # row_init.append(var)
+            # row_init.extend(self.KeepVarsOrdered[var])
             self.ExcelTemp.append(row_init)
             pins_sheet.append(row_init)
 
         pins_sheet.append(self.add_var_to_excel_by_bus('Vmag'))
         pins_sheet.append(self.add_var_to_excel_by_bus('Vang'))
+        pins_sheet.append(self.add_branch_data('LinesIj', 0))
+        pins_sheet.append(self.add_branch_data('LinesJi', 1))
         self.ExcelPins.save(filename=fileout)
 
     def add_var_to_excel_by_bus(self, var):
@@ -138,10 +137,33 @@ class DeviceModels():
         row_init = []
         for bus in range(0, len(self.SysParam['Bus'])):
             var_init.append('bus_' + str(bus + 1) + '/' + str(var))
-        row_init.append('outgoing')
-        row_init.append(str(var))
-        row_init.extend(var_init)
+        row_data = ['outgoing', str(var)]
+        row_data.extend(var_init)
+        row_init.extend(row_data)
+        # row_init.append(str(var))
+        # row_init.extend(var_init)
         return row_init
+
+    def add_branch_data(self, var, order):
+        var_init = []
+        row_init = []
+        if order == 0:
+            for lines in self.Settings.Lineij:
+                var_init.append('line_' + str(lines[0]) + '_to_' + str(lines[1]) + '_' + str(lines[2]) + '/Imag0')
+
+        elif order == 1:
+            for lines in self.Settings.Lineij:
+                var_init.append('line_' + str(lines[0]) + '_to_' + str(lines[1]) + '_' + str(lines[2]) + '/Imag1')
+        else:
+            logging.warning('<Unknown branch to-from given. No Branch data added>')
+            return 0
+        row_data = ['outgoing', str(var)]
+        row_data.extend(var_init)
+        row_init.extend(row_data)
+        # row_init.append(str(var))
+        # row_init.extend(var_init)
+        return row_init
+
 
     def create_excel_file_pins_bus(self): #TODO: arrange in order by var. Must be done for ports to match var list in SysPar
         """Creates excel pin rows for each bus and all of the variables associated with the device group"""
@@ -166,9 +188,11 @@ class DeviceModels():
                                 tmprow.append(cell)
                             else:
                                 continue
-                    row_init.append('outgoing')
-                    row_init.append( 'Gen_' + str(bus) + '_Vars')
-                    row_init.extend(tmprow)
+                    row_data = ['outgoing','Gen_' + str(bus) + '_Vars']
+                    row_data.extend(tmprow)
+                    row_init.extend(row_data)
+                    # row_init.append( 'Gen_' + str(bus) + '_Vars')
+                    # row_init.extend(tmprow)
                     self.ExcelTemp.append(tmprow)
                     pins_sheet.append(row_init)
 
