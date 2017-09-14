@@ -4,7 +4,6 @@ from numpy import array, ndarray
 from collections import OrderedDict
 
 from dime import dime
-
 import logging
 
 
@@ -150,6 +149,7 @@ class Streaming(object):
                       }
             self.dimec.send_var(mod, 'Varvgs', Varvgs)
 
+
     def run(self):
         """Start automatic data acquisition and streaming"""
         while True:
@@ -165,7 +165,7 @@ class Streaming(object):
                 self.vars_to_modules(t, k, varout)
 
     def send_done(self):
-        """Broascast `DONE` signal"""
+        """Broadcast `DONE` signal"""
         self.dimec.broadcast('DONE', 1)
         logging.info('<DONE> signal broadcasted.')
 

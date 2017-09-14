@@ -205,14 +205,18 @@ class SimControl(object):
 
                 if self.simulationTime < nextAcqTime:  # acquiring too fast
                     pass
-                elif self.simulationTime - nextAcqTime < sample_time_error:
+                elif abs(self.simulationTime - nextAcqTime)  <= sample_time_error:
                     retval = sigVals
                     self._lastAcqTime = self.simulationTime
-
                     _, rem = divmod(self._lastAcqTime, 5)  # show info every 5 seconds
                     if abs(rem) < self.t_acq:
                         logging.debug('Data acquired at t = {}'.format(self.simulationTime))
-                        
+
+                    ret_t = self.simulationTime
+                elif self.simulationTime - self._lastAcqTime > sample_time_error + 0.001:
+                    retval = sigVals
+                    self._lastAcqTime = self.simulationTime
+
                     ret_t = self.simulationTime
 
         return ret_t, int(ret_t/self.t_acq), retval
