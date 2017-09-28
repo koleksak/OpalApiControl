@@ -11,7 +11,7 @@ from OpalApiControl.parser import psse
 
 class LTBSetup(object):
     """Class for parsing files and create SysParam data for LTB streaming"""
-    def __init__(self, raw='', dyr='', xls='', path='', simObject=None):
+    def __init__(self, raw='', dyr='', xls='', path='',model='',simObject=None):
         if not os.path.isdir(path):
             logging.error('Path <{}> does not exist.'.format(path))
             sys.exit(1)
@@ -24,6 +24,10 @@ class LTBSetup(object):
 
         if raw:
             self.raw = os.path.join(path, raw)
+            if(os.path.exists(self.raw)):
+                pass
+            else:
+                self.raw = os.path.join(path, model, raw)
         if xls:
             self._xlsPath = os.path.join(path, xls)
         if dyr:
@@ -43,3 +47,4 @@ class LTBSetup(object):
     def get_sysparam(self):
         self.Settings = psse.init_pf_to_stream(self.raw, self.dyr)
         self.SysParam = self.Settings.SysParam
+        self.SysName = self.Settings.SysName

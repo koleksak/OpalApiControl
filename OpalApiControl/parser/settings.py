@@ -32,6 +32,8 @@ class Settings(object):
         self.nLine = []
         self.Lineij = []
         self.Lineji = []
+        self.LineBusMatij = defaultdict(list)
+        self.LineBusMatji = defaultdict(list)
         self.freq = 0
         self.Pss = []
         self.pss1count = 0  #TODO: Make Dictionary for holding count of PSS devices and name as well as Tg
@@ -45,6 +47,8 @@ class Settings(object):
         self.Fault = []
         self.DevicesAtBus =  defaultdict(list) #Stores the Dyr Devices at each bus to be used to generate I/0 ePHAS pins
 
+        self.SysName = {}
+
     def set_sys_params(self):
         """Creates System Parameter Dict for attributes in the Class SysParamDevice List"""
         for device in self.SysParamDevices:
@@ -53,3 +57,4 @@ class Settings(object):
                 self.SysParam[device] = {}
                 self.SysParam[device] = dev_values
 
+        self.SysName['Bus'] = self.BusNames

@@ -9,9 +9,10 @@ import sys
 
 
 class BusCoords():
-    def __init__(self,BusDataFile, raw, project, path):
+    def __init__(self,BusDataFile, raw, project, model, path):
         self.raw = raw
         self.project = project
+        self.model = model
         self.path = path
         self.projectpath = os.path.join(path,project)
         self.data_folder = ' '
@@ -44,7 +45,7 @@ class BusCoords():
 
     def append_coords_to_raw(self):
 
-        rawfile = os.path.join(self.projectpath, self.data_folder, self.raw)
+        rawfile = os.path.join(self.projectpath, self.data_folder, self.model, self.raw)
         file = open(rawfile, 'r')
         temp = []
         for num, line in enumerate(file.readlines()):
@@ -61,7 +62,7 @@ class BusCoords():
         newfile = str(self.raw)
         newfile = newfile.split('.')
         newfile = newfile[0] + 'Coords.raw'
-        newfile = os.path.join(self.projectpath, self.data_folder, newfile)
+        newfile = os.path.join(self.projectpath, self.data_folder,self.model, newfile)
         file = open(newfile, 'w')
         for line in temp:
             file.write(line)

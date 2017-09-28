@@ -273,8 +273,6 @@ def read(file):
                       param['qmax'], param['qmin'], maxV, minV, loss, status]
             Settings.PV.append(pvlist)
 
-    linelen = 0
-    linecount = 0
 
     for data in raw['branch']:
         """
@@ -304,6 +302,8 @@ def read(file):
         Settings.Lineij.append([data[0], data[1], data[2]])
         Settings.Lineji.append([data[1], data[0], data[2]])
         Settings.LineOrd[param['bus1']].append(psatlist)
+        Settings.LineBusMatij[param['bus2']].append(Settings.linecount)
+        Settings.LineBusMatji[param['bus1']].append(Settings.linecount)
         Settings.linecount += 1
 
     for data in raw['transf']:
@@ -537,7 +537,7 @@ def add_dyn(model, data):
                  }
         psatlist = [gen_idx, param['extype'], param['maxregV'], param['minregV'], param['excGain'],
                     param['Ta'], param['Kf'], param['Tf'], EMPTY, param['FCTC'],
-                    param['MTC'], param['1stCC'], param['2ndCC'], param['status']]
+                    param['MTC'], param['1stCC'], param['2ndCC'], param['status'], 0]
 
         Settings.Exc.append(psatlist)
         Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
@@ -588,7 +588,7 @@ def add_dyn(model, data):
                  }
         psatlist = [gen_idx, param['extype'], param['maxregV'], param['minregV'], param['regGain'],
                     param['Tc'], param['Tb'], param['2ndX'], param['2nd0'], param['FCTC'],
-                    param['MTC'], param['1stCC'], param['2ndCC'], param['status']]
+                    param['MTC'], param['1stCC'], param['2ndCC'], param['status'], 0]
 
         Settings.Exc.append(psatlist)
         Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
@@ -644,7 +644,7 @@ def add_dyn(model, data):
                  }
         psatlist = [gen_idx, param['extype'], param['maxregV'], param['minregV'], param['regGain'],
                     param['Tc'], param['Tb'], param['2ndX'], param['Ta'], param['FCTC'],
-                    param['MTC'], param['1stCC'], param['2ndCC'], param['status']]
+                    param['MTC'], param['1stCC'], param['2ndCC'], param['status'], 0]
 
         Settings.Exc.append(psatlist)
         Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
@@ -695,7 +695,7 @@ def add_dyn(model, data):
                  }
         psatlist = [gen_idx, param['extype'], param['maxregV'], param['minregV'], param['regGain'],
                     param['1stX'], param['1st0'], param['2ndX'], param['2nd0'], param['FCTC'],
-                    param['MTC'], param['1stCC'], param['2ndCC'], param['status']]
+                    param['MTC'], param['1stCC'], param['2ndCC'], param['status'], 0]
 
         Settings.Exc.append(psatlist)
         Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})

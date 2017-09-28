@@ -128,8 +128,10 @@ class DeviceModels():
 
         pins_sheet.append(self.add_var_to_excel_by_bus('Vmag'))
         pins_sheet.append(self.add_var_to_excel_by_bus('Vang'))
-        pins_sheet.append(self.add_branch_data('LinesIj', 0))
-        pins_sheet.append(self.add_branch_data('LinesJi', 1))
+        pins_sheet.append(self.add_branch_data_currents('LinesIj_Imag', 0))
+        pins_sheet.append(self.add_branch_data_currents('LinesJi_Imag', 1))
+        pins_sheet.append(self.add_branch_data_currents('LinesIj_Iang', 2))
+        pins_sheet.append(self.add_branch_data_currents('LinesJi_Iang', 3))
         self.ExcelPins.save(filename=fileout)
 
     def add_var_to_excel_by_bus(self, var):
@@ -144,16 +146,21 @@ class DeviceModels():
         # row_init.extend(var_init)
         return row_init
 
-    def add_branch_data(self, var, order):
+    def add_branch_data_currents(self, var, order):
         var_init = []
         row_init = []
         if order == 0:
             for lines in self.Settings.Lineij:
                 var_init.append('line_' + str(lines[0]) + '_to_' + str(lines[1]) + '_' + str(lines[2]) + '/Imag0')
-
         elif order == 1:
             for lines in self.Settings.Lineij:
                 var_init.append('line_' + str(lines[0]) + '_to_' + str(lines[1]) + '_' + str(lines[2]) + '/Imag1')
+        elif order == 2:
+            for lines in self.Settings.Lineij:
+                var_init.append('line_' + str(lines[0]) + '_to_' + str(lines[1]) + '_' + str(lines[2]) + '/Iang0')
+        elif order == 3:
+            for lines in self.Settings.Lineij:
+                var_init.append('line_' + str(lines[0]) + '_to_' + str(lines[1]) + '_' + str(lines[2]) + '/Iang1')
         else:
             logging.warning('<Unknown branch to-from given. No Branch data added>')
             return 0
@@ -163,7 +170,6 @@ class DeviceModels():
         # row_init.append(str(var))
         # row_init.extend(var_init)
         return row_init
-
 
     def create_excel_file_pins_bus(self): #TODO: arrange in order by var. Must be done for ports to match var list in SysPar
         """Creates excel pin rows for each bus and all of the variables associated with the device group"""

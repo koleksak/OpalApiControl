@@ -40,7 +40,7 @@ def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None,
         modelPath = simulink
 
 
-    sim_data = LTBSetup(raw=raw, dyr=dyr, xls=xls, path=modelPath, simObject=sim)
+    sim_data = LTBSetup(raw=raw, dyr=dyr, xls=xls, path=modelPath, model=model, simObject=sim)
 
     streaming = Streaming(name='sim', server=server, ltb_data=sim_data)
 
@@ -49,6 +49,7 @@ def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None,
 
     sim_data.get_sysparam()
     sim_data.get_varheader_idxvgs()
+    sim.set_settings(sim_data.Settings)
     streaming.send_init()
     logging.debug('Varheader, SysParam and Idxvgs sent.')
     sleep(0.5)

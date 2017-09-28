@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 from dime import dime
 import logging
+import time
 
 
 class Streaming(object):
@@ -57,6 +58,8 @@ class Streaming(object):
             self.dimec.broadcast('Varheader', self.ltb_data.Varheader)
             self.dimec.broadcast('Idxvgs', self.ltb_data.Idxvgs)
             self.dimec.broadcast('SysParam', self.ltb_data.SysParam)
+            self.dimec.broadcast('SysName', self.ltb_data.SysName)
+            time.sleep(0.5)
             logging.info('Varheader, Idxvgs and SysParam broadcast.')
         else:
             if type(recipient) != list:
@@ -67,6 +70,8 @@ class Streaming(object):
                 self.dimec.send_var(item, 'Varheader', self.ltb_data.Varheader)
                 self.dimec.send_var(item, 'Idxvgs', self.ltb_data.Idxvgs)
                 self.dimec.send_var(item, 'SysParam', self.ltb_data.SysParam)
+                self.dimec.send_var(item, 'SysName', self.ltb_data.SysName)
+                time.sleep(0.5)
                 logging.info('Varheader, Idxvgs and SysParam sent to module <{}>.'.format(item))
 
     def record_module_init(self, module_name, init_var):
