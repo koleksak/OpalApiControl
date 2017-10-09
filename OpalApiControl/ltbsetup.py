@@ -32,6 +32,10 @@ class LTBSetup(object):
             self._xlsPath = os.path.join(path, xls)
         if dyr:
             self.dyr = os.path.join(path, dyr)
+            if (os.path.exists(self.dyr)):
+                pass
+            else:
+                self.dyr = os.path.join(path, model, dyr)
 
         self.Settings = None
         self.SysParam = None

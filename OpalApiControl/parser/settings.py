@@ -27,7 +27,9 @@ class Settings(object):
         self.Tg = []
         self.govcount = 0
         self.LineOrd = defaultdict(list)
+        self.branches = 0
         self.linecount = 0
+        self.transformers = 0
         self.Line = []
         self.nLine = []
         self.Lineij = []

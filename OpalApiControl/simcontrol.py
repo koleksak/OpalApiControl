@@ -18,7 +18,8 @@ from numpy import multiply
 from numpy import real
 from numpy import imag
 from numpy import ndarray
-
+from collections import defaultdict, OrderedDict
+from time import time
 
 
 class SimControl(object):
@@ -29,7 +30,11 @@ class SimControl(object):
         self.path = path
         self.t_acq = t_acq
         self.IdxvgsStore = None
-        self.branch_power = None
+        self.branch_bus_power = None
+        self.lastidxvgs = None
+        self.add_idxvgs_to_var_list = []
+        self.varheader_list = []
+        self.lastvaridx = None
         self.Settings = None
 
         self._projectPath = os.path.join(path, str(project) + '/' + str(project) + '.llp')
@@ -183,7 +188,11 @@ class SimControl(object):
                     if dev in Idxvgs.keys() and item in Idxvgs[dev].keys():
                         Idxvgs[dev][item].append(matlab_idx)
                         indexed = True
+                        if item not in self.varheader_list:
+                            self.varheader_list.append(item)
                         break
+            self.lastidxvgs = matlab_idx
+
             #TODO: Add Line Power data that is calculated outside of ePHASORsim
             if not indexed:
                 logging.warning('Variable <{}> not added to Idxvgs.'.format(item))
@@ -195,6 +204,60 @@ class SimControl(object):
         self.IdxvgsStore = Idxvgs
 
         return Varheader, Idxvgs
+    def add_branch_power_to_idxvgs(self):
+        """Adds idxvgs for data not included in ePHASORsim output ports. Includes, Pij,Pji,Qij,Qji,Sij,Sji"""
+        Idxvgs_Update = dict()
+        self.lastidxvgs +=1
+        for var in SysPar['Line']:
+            if var in self.varheader_list:
+                continue
+            else:
+                Idxvgs_Update[var] = range(self.lastidxvgs, self.lastidxvgs + self.Settings.branches)
+                self.lastidxvgs = self.lastidxvgs + self.Settings.branches
+                self.add_idxvgs_to_var_list.append(var)
+
+
+        # Convert to numpy column arrays
+        for var, val in Idxvgs_Update.items():
+            Idxvgs_Update[var] = array(val).T
+
+        return Idxvgs_Update
+
+    def add_bus_power_to_idxvgs(self):
+        """Adds Bus P and Q Idxvgs"""
+        Idxvgs_Update = dict()
+        self.lastidxvgs +=1
+        for var in SysPar['Bus']:
+            if var in self.varheader_list:
+                continue
+            else:
+                Idxvgs_Update[var] = range(self.lastidxvgs, self.lastidxvgs + self.Settings.nBus)
+                self.lastidxvgs = self.lastidxvgs + self.Settings.nBus
+                self.add_idxvgs_to_var_list.append(var)
+
+        # Convert to numpy column arrays
+        for var, val in Idxvgs_Update.items():
+            Idxvgs_Update[var] = array(val).T
+
+        return Idxvgs_Update
+
+    def add_vars_varheader(self,Device):
+        """Adds proper heading for the new var data after it is added to Idxgvs"""
+
+        Varheader_Update = []
+        for var in self.add_idxvgs_to_var_list:
+            if var in Device and var not in self.varheader_list:
+                for idx, num in enumerate(Device[var]):
+                    var_name = str(var) + '(' + str(idx+1) + ')'
+                    Varheader_Update.append(var_name)
+                self.varheader_list.append(var)
+                self.add_idxvgs_to_var_list.remove(var)
+            else:
+                pass
+
+        return Varheader_Update
+
+
 
     def acquire_data(self):
         """Acquire data from running simulation"""
@@ -207,7 +270,6 @@ class SimControl(object):
 
         ret_t = 0.
         retval = None
-
         if self.isRunning:
             try:
                 sigVals, monitorInfo, simTimeStep, endFrame = OpalApiPy.GetAcqGroupSyncSignals(self._acqGroup - 1, 0, 0, 1, 1)
@@ -216,6 +278,7 @@ class SimControl(object):
                 logging.debug('Data acquisition exception. Simulation may have completed.')
                 ret_t = -1.
             else:
+                pass
                 missedData, offset, self.simulationTime, _ = monitorInfo
                 ret_t = self.simulationTime
 
@@ -226,35 +289,34 @@ class SimControl(object):
                     pass
                 elif abs(self.simulationTime - nextAcqTime)  <= sample_time_error:
                     retval = sigVals
-                    # self.branch_power = self.calc_branch_power(sigVals)
-                    # if self.branch_power == None:
+                    # self.branch_bus_power = self.calc_branch_bus_power(sigVals)
+                    # if self.branch_bus_power == None:
                     #     pass
                     # else:
                     #     newvals = list(retval)
-                    #     newvals.extend(self.branch_power)
+                    #     newvals.extend(self.branch_bus_power)
                     #     retval = tuple(newvals)
 
                     self._lastAcqTime = self.simulationTime
                     _, rem = divmod(self._lastAcqTime, 5)  # show info every 5 seconds
-                    if abs(rem) < self.t_acq:
-                        logging.debug('Data acquired at t = {}'.format(self.simulationTime))
+                    # if abs(rem) < self.t_acq:
+                    logging.debug('Data acquired at t = {}'.format(self.simulationTime))
 
                     ret_t = self.simulationTime
                 elif self.simulationTime - self._lastAcqTime > sample_time_error + 0.001:
                     retval = sigVals
-                    # self.branch_power = self.calc_branch_power(sigVals)
-                    # if self.branch_power == None:
+                    # self.branch_bus_power = self.calc_branch_bus_power(sigVals)
+                    # if self.branch_bus_power == None:
                     #     pass
                     # else:
                     #     newvals = list(retval)
-                    #     newvals.extend(self.branch_power)
+                    #     newvals.extend(self.branch_bus_power)
                     #     retval = tuple(newvals)
                     logging.warning('Under-sampling occurred at t = {}'.format(self.simulationTime))
+
                     self._lastAcqTime = self.simulationTime
 
                     ret_t = self.simulationTime
-
-
         return ret_t, int(ret_t/self.t_acq), retval
 
     def send_event_signals(self, signal, value):
@@ -266,17 +328,19 @@ class SimControl(object):
         except:
             logging.error("<Signal input name error. No signals set>")
 
-    def calc_branch_power(self, sigVals):
+    def calc_branch_bus_power(self, sigVals):  #TODO: Fix line power to allow for multiple line id's
         """calculates branch P,Q,S from acquired data to be added to the acquired data list"""
-        Pij = []
-        Qij = []
-        Sij = []
-        Pji = []
-        Qji = []
-        Sji = []
-        Bus_P = []
-        Bus_Q = []
+        Pij = OrderedDict()
+        Qij = OrderedDict()
+        Sij = OrderedDict()
+        Pji = OrderedDict()
+        Qji = OrderedDict()
+        Sji = OrderedDict()
+        Bus_P = defaultdict(list)
+        Bus_Q = defaultdict(list)
         retval = []
+        P_Bus = []
+        Q_Bus = []
 
         try:
             line_current = array(sigVals[self.IdxvgsStore['Line']['Iij'][0]:self.IdxvgsStore['Line']['Iij'][-1]])
@@ -286,50 +350,77 @@ class SimControl(object):
         except:
             logging.error("<Missing Idxvgs for Line current, angle or Bus Magnitude. Branch power not added>")
             return None
-        else:
-            for bus in self.Settings.LineBusMatij:
-                phi = []
-                idx = self.Settings.LineBusMatij[bus]
-                try:   #TODO:FIXBUG Indexing
-                    Imag = line_current[idx]
-                except:
-                    break
-                Iang = line_angle[idx]
-                S = multiply(bus_mag[bus-1],Imag)
-                phi_diff = subtract((bus_ang[bus-1]),Iang)
-                for ang in phi_diff:
-                    phi.append(exp(1j*ang))
-                phi = array(phi)
-                S_ = multiply(S,phi)
-                P = real(S_)
-                Q = imag(S_)
-                Bus_P.append(sum(P))
-                Bus_Q.append(sum(Q))
-                Pij.extend(P)
-                Qij.extend(Q)
-                Sij.extend(S)
+        else:   #TODO: Fix Missing line data outputs. Output power does not match line count. Short by 18 and 9 lines
+            for line in self.Settings.Lineij:
+                bus1 = line[0]
+                bus2 = line[1]
+                if bus2 in self.Settings.LineBusMatij and line[2] == '1':
+                    phi = []
+                    idx = self.Settings.LineBusMatij[bus2]
+                    try:   #TODO:FIXBUG Indexing
+                        Imag = line_current[idx]
+                    except:
+                        break
+                    Iang = line_angle[idx]
+                    S = multiply(bus_mag[bus2-1],Imag)
+                    phi_diff = subtract((bus_ang[bus2-1]),Iang)
+                    for ang in phi_diff:
+                        phi.append(exp(1j*ang))
+                    phi = array(phi)
+                    S_ = multiply(S,phi)
+                    P = real(S_)
+                    Q = imag(S_)
+                    Bus_P[bus2].append(sum(P))
+                    Bus_Q[bus2].append(sum(Q))
+                    # for num, line_num in enumerate(idx):
+                    #     Pij[line_num] = P[num]
+                    #     Qij[line_num] = Q[num]
+                    #     Sij[line_num] = S[num]
 
-            for bus in self.Settings.LineBusMatij:
-                phi = []
-                idx = self.Settings.LineBusMatji[bus]
-                try:
-                    Imag = line_current[idx]
-                except:
-                    break
-                Iang = line_angle[idx]
-                S = multiply(bus_mag[bus-1],Imag)
-                phi_diff = subtract((bus_ang[bus-1]),Iang)
-                for ang in phi_diff:
-                    phi.append(exp(1j*ang))
-                phi = array(phi)
-                S_ = multiply(S,phi)
-                P = real(S_)
-                Q = imag(S_)
-                Pji.extend(P)
-                Qji.extend(Q)
-                Sji.extend(S)
 
-        retval = list(itertools.chain(Pij,Pji,Qij,Qji,Sij,Sji,Bus_P,Bus_Q))
+            for line in self.Settings.Lineji:
+                bus1 = line[0]
+                bus2 = line[1]
+                if bus2 in self.Settings.LineBusMatji and line[2] == '1':
+                    phi = []
+                    idx = self.Settings.LineBusMatji[bus2]
+                    try:
+                        Imag = line_current[idx]
+                    except:
+                        break
+                    Iang = line_angle[idx]
+                    S = multiply(bus_mag[bus2-1],Imag)
+                    phi_diff = subtract((bus_ang[bus2-1]),Iang)
+                    for ang in phi_diff:
+                        phi.append(exp(1j*ang))
+                    phi = array(phi)
+                    S_ = multiply(S,phi)
+                    P = real(S_)
+                    Q = imag(S_)
+                    Bus_P[bus2].append(sum(P))
+                    Bus_Q[bus2].append(sum(Q))
+                    # for num, line_num in enumerate(idx):
+                    #     Pji[line_num] = P[num]
+                    #     Qji[line_num] = Q[num]
+                    #     Sji[line_num] = S[num]
+
+        for bus in range(1, self.Settings.nBus+1):
+            if bus in Bus_P.keys():
+                P_Bus.append(sum(Bus_P[bus]))
+            else:
+                P_Bus.append(0)
+            if bus in Bus_Q.keys():
+                Q_Bus.append(sum(Bus_Q[bus]))
+            else:
+                Q_Bus.append(0)
+        # Pij = Pij.values()
+        # Pji = Pji.values()
+        # Qij = Qij.values()
+        # Qji = Qji.values()
+        # Sij = Sij.values()
+        # Sji = Sji.values()
+        # retval = list(itertools.chain(Pij,Pji,Qij,Qji,Sij,Sji,P_Bus,Q_Bus))
+        retval = list(itertools.chain(P_Bus,Q_Bus))
         return retval
 
     @staticmethod

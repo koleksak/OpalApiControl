@@ -30,7 +30,7 @@ class BusCoords():
         else:
             self.data_folder = 'models'
 
-        self.BusDataFile = os.path.join(self.projectpath ,'models', BusDataFile)
+        self.BusDataFile = os.path.join(self.projectpath ,'models', self.model, BusDataFile)
         self.Coords = []
 
     def get_bus_coords(self):

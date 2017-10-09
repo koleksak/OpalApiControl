@@ -302,9 +302,10 @@ def read(file):
         Settings.Lineij.append([data[0], data[1], data[2]])
         Settings.Lineji.append([data[1], data[0], data[2]])
         Settings.LineOrd[param['bus1']].append(psatlist)
-        Settings.LineBusMatij[param['bus2']].append(Settings.linecount)
-        Settings.LineBusMatji[param['bus1']].append(Settings.linecount)
+        Settings.branches += 1
         Settings.linecount += 1
+        Settings.LineBusMatij[param['bus2']].append(Settings.branches)
+        Settings.LineBusMatji[param['bus1']].append(Settings.branches)
 
     for data in raw['transf']:
         """
@@ -351,6 +352,7 @@ def read(file):
 
         Settings.LineOrd[param['bus1']].append(psatlist)
         Settings.linecount += 1
+        Settings.transformers += 1
     # ADD Line Data(All Branch Types) to Sys Param Dict after .dyr Transformer Data Added
     # Re-Order Line Data for correct sequence
     for key in Settings.LineOrd:
