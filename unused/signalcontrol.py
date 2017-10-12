@@ -10,7 +10,7 @@
 #***************************************************************************************
 
 import OpalApiPy
-
+import os
 from unused import acquire
 
 
@@ -24,7 +24,7 @@ from unused import acquire
 #*******
 
 
-def showControlSignals():
+def showControlSignals(group):
     """Displays available subSystems along with their ID and value.
     Read-Write Control Signals"""
     #OpalApiPy.GetSignalControl(0, 1)
@@ -32,17 +32,31 @@ def showControlSignals():
     systemList = [subSystemSignals]
 
     print("****************Available Signals******************")
-    sigcount = 1
     iDList = []
-    for systems in systemList:
-        sigcount =+1
-        systemInfo = systems
-        for signal in systemInfo:
-            signalType, subSystemId, path, signalName, reserved, readonly, value = signal
-            iDList.append(subSystemId)
-            print("SubSystem Name:{}  SubSystemID:{}  SignalName:{}  Value:{}".format(path, subSystemId, signalName, value))
-    #OpalApiPy.GetSignalControl(0, 0)
+    if group == 'all':
+        for systems in systemList:
+            systemInfo = systems
 
+            for signal in systemInfo:
+                signalType, subSystemId, path, signalName, reserved, readonly, value = signal
+                iDList.append(subSystemId)
+                print("SubSystem Name:{}  SubSystemID:{}  SignalName:{}  Value:{}".format(path, subSystemId, signalName, value))
+    else:
+        for systems in systemList:
+            systemInfo = systems
+            for signal in systemInfo:
+                signalType, subSystemId, path, signalName, reserved, readonly, value = signal
+                try:
+                    signalName = signalName.split('(')
+                    signalName = signalName[0]
+                except:
+                    pass
+
+                if signalName == group:
+                    iDList.append(subSystemId)
+                    print("SubSystem Name:{}  SubSystemID:{}  SignalName:{}  Value:{}".format(path, subSystemId, signalName, value))
+                else:
+                    continue
 
 def getControlSignalsDict():   #NEW FUNCTION IN PROGRES, ORDERED DICT for ID, key-name, value-value
     """"# Returns a Dictionary of key-value (ID,VALUE) for each control signal. Model must be loaded
