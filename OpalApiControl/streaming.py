@@ -226,7 +226,7 @@ class EventQueue(object):
             if Event['name'][idx] == 'Bus':
                 signame = 'bus_fault'
             elif Event['name'][idx] == 'Line':
-                signame = 'line_fault'
+                signame = 'line_status'
             elif Event['name'][idx] == 'Syn':
                 signame = 'syn_status'
             else:
