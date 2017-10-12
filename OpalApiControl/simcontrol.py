@@ -11,15 +11,6 @@ import itertools
 from consts import *
 import numpy
 from numpy import array
-from numpy import dot
-from numpy import exp
-from numpy import subtract
-from numpy import multiply
-from numpy import real
-from numpy import imag
-from numpy import ndarray
-from collections import defaultdict, OrderedDict
-from time import time
 
 
 class SimControl(object):
@@ -204,6 +195,7 @@ class SimControl(object):
         self.IdxvgsStore = Idxvgs
 
         return Varheader, Idxvgs
+
     def add_branch_power_to_idxvgs(self):
         """Adds idxvgs for data not included in ePHASORsim output ports. Includes, Pij,Pji,Qij,Qji,Sij,Sji"""
         Idxvgs_Update = dict()
@@ -289,14 +281,6 @@ class SimControl(object):
                     pass
                 elif abs(self.simulationTime - nextAcqTime)  <= sample_time_error:
                     retval = sigVals
-                    # self.branch_bus_power = self.calc_branch_bus_power(sigVals)
-                    # if self.branch_bus_power == None:
-                    #     pass
-                    # else:
-                    #     newvals = list(retval)
-                    #     newvals.extend(self.branch_bus_power)
-                    #     retval = tuple(newvals)
-
                     self._lastAcqTime = self.simulationTime
                     _, rem = divmod(self._lastAcqTime, 5)  # show info every 5 seconds
                     # if abs(rem) < self.t_acq:
@@ -305,13 +289,6 @@ class SimControl(object):
                     ret_t = self.simulationTime
                 elif self.simulationTime - self._lastAcqTime > sample_time_error + 0.001:
                     retval = sigVals
-                    # self.branch_bus_power = self.calc_branch_bus_power(sigVals)
-                    # if self.branch_bus_power == None:
-                    #     pass
-                    # else:
-                    #     newvals = list(retval)
-                    #     newvals.extend(self.branch_bus_power)
-                    #     retval = tuple(newvals)
                     logging.warning('Under-sampling occurred at t = {}'.format(self.simulationTime))
 
                     self._lastAcqTime = self.simulationTime
@@ -328,100 +305,6 @@ class SimControl(object):
         except:
             logging.error("<Signal input name error. No signals set>")
 
-    def calc_branch_bus_power(self, sigVals):  #TODO: Fix line power to allow for multiple line id's
-        """calculates branch P,Q,S from acquired data to be added to the acquired data list"""
-        Pij = OrderedDict()
-        Qij = OrderedDict()
-        Sij = OrderedDict()
-        Pji = OrderedDict()
-        Qji = OrderedDict()
-        Sji = OrderedDict()
-        Bus_P = defaultdict(list)
-        Bus_Q = defaultdict(list)
-        retval = []
-        P_Bus = []
-        Q_Bus = []
-
-        try:
-            line_current = array(sigVals[self.IdxvgsStore['Line']['Iij'][0]:self.IdxvgsStore['Line']['Iij'][-1]])
-            line_angle = array(sigVals[self.IdxvgsStore['Line']['Iij_ang'][0]:self.IdxvgsStore['Line']['Iij_ang'][-1]])
-            bus_mag = array(sigVals[self.IdxvgsStore['Bus']['V'][0]:self.IdxvgsStore['Bus']['V'][-1]])
-            bus_ang = array(sigVals[self.IdxvgsStore['Bus']['theta'][0]:self.IdxvgsStore['Bus']['theta'][-1]])
-        except:
-            logging.error("<Missing Idxvgs for Line current, angle or Bus Magnitude. Branch power not added>")
-            return None
-        else:   #TODO: Fix Missing line data outputs. Output power does not match line count. Short by 18 and 9 lines
-            for line in self.Settings.Lineij:
-                bus1 = line[0]
-                bus2 = line[1]
-                if bus2 in self.Settings.LineBusMatij and line[2] == '1':
-                    phi = []
-                    idx = self.Settings.LineBusMatij[bus2]
-                    try:   #TODO:FIXBUG Indexing
-                        Imag = line_current[idx]
-                    except:
-                        break
-                    Iang = line_angle[idx]
-                    S = multiply(bus_mag[bus2-1],Imag)
-                    phi_diff = subtract((bus_ang[bus2-1]),Iang)
-                    for ang in phi_diff:
-                        phi.append(exp(1j*ang))
-                    phi = array(phi)
-                    S_ = multiply(S,phi)
-                    P = real(S_)
-                    Q = imag(S_)
-                    Bus_P[bus2].append(sum(P))
-                    Bus_Q[bus2].append(sum(Q))
-                    # for num, line_num in enumerate(idx):
-                    #     Pij[line_num] = P[num]
-                    #     Qij[line_num] = Q[num]
-                    #     Sij[line_num] = S[num]
-
-
-            for line in self.Settings.Lineji:
-                bus1 = line[0]
-                bus2 = line[1]
-                if bus2 in self.Settings.LineBusMatji and line[2] == '1':
-                    phi = []
-                    idx = self.Settings.LineBusMatji[bus2]
-                    try:
-                        Imag = line_current[idx]
-                    except:
-                        break
-                    Iang = line_angle[idx]
-                    S = multiply(bus_mag[bus2-1],Imag)
-                    phi_diff = subtract((bus_ang[bus2-1]),Iang)
-                    for ang in phi_diff:
-                        phi.append(exp(1j*ang))
-                    phi = array(phi)
-                    S_ = multiply(S,phi)
-                    P = real(S_)
-                    Q = imag(S_)
-                    Bus_P[bus2].append(sum(P))
-                    Bus_Q[bus2].append(sum(Q))
-                    # for num, line_num in enumerate(idx):
-                    #     Pji[line_num] = P[num]
-                    #     Qji[line_num] = Q[num]
-                    #     Sji[line_num] = S[num]
-
-        for bus in range(1, self.Settings.nBus+1):
-            if bus in Bus_P.keys():
-                P_Bus.append(sum(Bus_P[bus]))
-            else:
-                P_Bus.append(0)
-            if bus in Bus_Q.keys():
-                Q_Bus.append(sum(Bus_Q[bus]))
-            else:
-                Q_Bus.append(0)
-        # Pij = Pij.values()
-        # Pji = Pji.values()
-        # Qij = Qij.values()
-        # Qji = Qji.values()
-        # Sij = Sij.values()
-        # Sji = Sji.values()
-        # retval = list(itertools.chain(Pij,Pji,Qij,Qji,Sij,Sji,P_Bus,Q_Bus))
-        retval = list(itertools.chain(P_Bus,Q_Bus))
-        return retval
 
     @staticmethod
     def get_system_control(state=None):
