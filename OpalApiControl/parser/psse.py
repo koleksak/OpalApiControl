@@ -952,7 +952,6 @@ def add_dyn(model, data):
         Settings.Wind.append(psatlist)
         Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
 
-
     elif model == 'WTT':
         # Type 1 and 2
         busidx = data[0]
@@ -975,6 +974,13 @@ def add_dyn(model, data):
         Settings.Wind.append(psatlist)
         Settings.DevicesAtBus[model.lower()].append({'Bus': busidx , 'Id' : id})
 
+    elif model == 'WT4G1':
+        # Type 4 Wind generator
+        busidx = data[0]
+        psatlist = [busidx, 1, 100, 100, 60, 1, 0.1, 0.1, 0.1, 0.1,
+                    3, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 0, 1, 1]
+        Settings.Dfig.append(psatlist)
     else:
         logging.warning('Skipping unsupported mode <{}> on bus {}'.format(model, data[0]))
 
