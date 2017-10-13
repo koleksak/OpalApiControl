@@ -135,7 +135,7 @@ class DeviceModels():
         pins_sheet.append(self.add_var_to_excel_by_bus('active3PGFault', 'incoming'))
         pins_sheet.append(self.add_var_to_excel_by_gen('Psup', 'incoming'))
         pins_sheet.append(self.add_var_to_excel_by_gen('Qsup', 'incoming'))
-        pins_sheet.append(self.add_var_to_excel_by_gen('status','incoming'))
+        pins_sheet.append(self.add_var_to_excel_by_gen('TRIP','incoming'))
         pins_sheet.append(self.add_var_to_excel_by_load('status', 'incoming','P'))
         pins_sheet.append(self.add_var_to_excel_by_load('status', 'incoming','Q'))
         pins_sheet.append(self.add_var_to_excel_by_branch('status', 4, 'incoming'))
