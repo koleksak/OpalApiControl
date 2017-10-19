@@ -11,6 +11,7 @@ import itertools
 from consts import *
 import numpy
 from numpy import array
+from time import time
 
 
 class SimControl(object):
@@ -168,6 +169,9 @@ class SimControl(object):
             indexed = False
             matlab_idx = idx + 1
 
+            if 'Busfreq' in item:
+                pass
+
             for dev, vars in SysPar.items():
                 if item in vars:
                     if dev not in Idxvgs.keys():
@@ -270,7 +274,6 @@ class SimControl(object):
                 logging.debug('Data acquisition exception. Simulation may have completed.')
                 ret_t = -1.
             else:
-                pass
                 missedData, offset, self.simulationTime, _ = monitorInfo
                 ret_t = self.simulationTime
 
@@ -294,7 +297,45 @@ class SimControl(object):
                     self._lastAcqTime = self.simulationTime
 
                     ret_t = self.simulationTime
+                else:
+                    logging.debug('Something weird happened during acquisition')
         return ret_t, int(ret_t/self.t_acq), retval
+
+    def acquire_data_test(self):
+        if not self._started:
+            logging.error('Run model before acquiring data.')
+
+        sample_time_error = 0.5 * self.t_acq
+        nextAcqTime = self._lastAcqTime + self.t_acq
+
+        if self.isRunning:
+            try:
+                a = time()
+                sigVals, monitorInfo, simTimeStep, endFrame = OpalApiPy.GetAcqGroupSyncSignals(self._acqGroup - 1, 0, 0, 1, 1)
+            except:
+                self._started = False
+                logging.debug('Data acquisition exception. Simulation may have completed.')
+            else:
+                missedData, offset, self.simulationTime, _ = monitorInfo
+                # logging.debug('{}'.format(time() - a))
+
+                msg = 'Sim Time: {}, next acq: {}, last acq: {}, elapsed: {}'.format(self.simulationTime, nextAcqTime, self._lastAcqTime, time() - a)
+                logging.debug(msg)
+
+                # if self._lastAcqTime == -1:
+                #     self._lastAcqTime = self.simulationTime - self.t_acq
+                #
+                # elif self.simulationTime - nextAcqTime < -sample_time_error:
+                #     logging.debug('Pass...')
+                # elif abs(self.simulationTime - nextAcqTime) <= sample_time_error:
+                #     self._lastAcqTime = self.simulationTime
+                #     logging.debug('Data acquired at t = {}'.format(self.simulationTime))
+                # elif self.simulationTime - self._lastAcqTime > sample_time_error:
+                #     self._lastAcqTime = self.simulationTime
+                #     logging.warning('Under-sampling occurred at t = {}'.format(self.simulationTime))
+            #     # else:
+            #     #     logging.debug('Something weird happened during acquisition')
+
 
     def send_event_signals(self, signal, value):
         try:
@@ -304,7 +345,6 @@ class SimControl(object):
             logging.info('<{}> Event triggered at t = {}'.format(len(sigs), self.simulationTime))
         except:
             logging.error("<Signal input name error. No signals set>")
-
 
     @staticmethod
     def get_system_control(state=None):

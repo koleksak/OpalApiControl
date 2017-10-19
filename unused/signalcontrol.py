@@ -101,16 +101,16 @@ def showSignals():
 
     #Remove control signals from list
     numControl = numControlSignals()
-    del allSignals[:numControl]
+    #del allSignals[:numControl]
 
     dynSignalList = []
     for signalList in allSignals:
         signal = [signalList]
         for spec in signal:
             signalType, signalId, path, signalName, reserved, readonly, value = spec
-            if(signalType == 1):
+            if(signalType == 0):
                 dynSignalList.append(signal)
-                print("Signal Name:{} SignalID:{} Value:{}".format(path, signalId, value))
+                print("Signal Name:{} SignalID:{} Value:{}".format(signalName, signalId, value))
 
 def getSignalsDict():
     """Returns a dictionary of key-value(ID,VALUE) for signals(NOT control signals)
