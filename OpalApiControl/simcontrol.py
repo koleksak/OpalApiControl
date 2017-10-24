@@ -38,6 +38,7 @@ class SimControl(object):
         self._realTimeMode = None
         self._allSignals = None
         self.simulationTime = 0.
+        self.startSysTime = 0.
 
         # Internal states - do not modify
         self._open = False
@@ -253,7 +254,9 @@ class SimControl(object):
 
         return Varheader_Update
 
-
+    def set_start_time(self):
+        if not self.startSysTime:
+            self.startSysTime = time()
 
     def acquire_data(self):
         """Acquire data from running simulation"""
@@ -275,6 +278,8 @@ class SimControl(object):
                 ret_t = -1.
             else:
                 missedData, offset, self.simulationTime, _ = monitorInfo
+                self.simulationTime = time() - self.startSysTime
+
                 ret_t = self.simulationTime
 
                 if self._lastAcqTime == -1:

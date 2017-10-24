@@ -160,6 +160,7 @@ class Streaming(object):
 
     def run(self):
         """Start automatic data acquisition and streaming"""
+        self.ltb_data.sim.set_start_time()
         while True:
             self.sync_and_handle()
             t, k, varout = self.ltb_data.sim.acquire_data()
