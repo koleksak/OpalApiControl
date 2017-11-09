@@ -10,5 +10,7 @@ if __name__ == "__main__":
     cui = 'tcp://160.36.59.189:5000'
     kirsten = 'tcp://160.36.56.211:9898'
     ehsan = 'tcp://10.129.132.192:8801'
+    cui_ltb7 = 'tcp://160.36.56.211:9900'
+
     run_model(project='WECC_Wind_Inertia_Siqi', model='phasor03_PSSE', raw='Curent02_final_ConstZCoords.raw', dyr='Curent02_final_Wind.dyr',
-              path='C:/RT-LABv11_Workspace_New/', server=localhost)
+              path='C:/RT-LABv11_Workspace_New/', server=cui_ltb7)

@@ -172,6 +172,8 @@ class Streaming(object):
                 continue
             else:
                 self.vars_to_modules(t, k, varout)
+        # while True:
+        #     self.ltb_data.sim.acquire_data_test()
 
     def send_done(self):
         """Broadcast `DONE` signal"""
