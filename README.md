@@ -1,5 +1,5 @@
 ## OpalApiControl
-OpalApiControl is a data acquisition, streaming and control interface developed for RT-LAB software packages.  The project was developed for [CURENT](http://curent.utk.edu/) at the University Tennessee, Knoxville for North American Grid System models analysis.
+OpalApiControl is a data acquisition, streaming and control interface developed for RT-LAB software packages.  The project was developed for [CURENT](http://curent.utk.edu/) at the University of Tennessee, Knoxville. It serves as a research tool for North American Grid System models analysis.
 
 **OPAL RT-Lab Python/API Interfacing install instructions**
 
