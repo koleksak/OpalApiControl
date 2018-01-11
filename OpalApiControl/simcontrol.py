@@ -150,7 +150,7 @@ class SimControl(object):
     def set_settings(self,Settings):
         self.Settings = Settings
 
-    def varheader_idxvgs(self):
+    def varheader_idxvgs(self,add_power_devs):
         """Parse ePHASORsim output ports and generate Varheader and Idxvgs"""
         Varheader = []
         Idxvgs = dict()
@@ -199,47 +199,50 @@ class SimControl(object):
                 Idxvgs[dev][var] = array(val).T
         self.IdxvgsStore = Idxvgs
 
+        if add_power_devs == None:
+            pass
+        else:
+            for dev in add_power_devs:
+                Idxvgs[dev].update(self.add_power_to_idxvgs(dev))
+                Varheader.extend(self.add_vars_varheader(Idxvgs[dev]))
+
         return Varheader, Idxvgs
 
-    def add_branch_power_to_idxvgs(self):
-        """Adds idxvgs for data not included in ePHASORsim output ports. Includes, Pij,Pji,Qij,Qji,Sij,Sji"""
-        Idxvgs_Update = dict()
-        self.lastidxvgs +=1
-        for var in SysPar['Line']:
-            if var in self.varheader_list:
-                continue
-            else:
-                Idxvgs_Update[var] = range(self.lastidxvgs, self.lastidxvgs + self.Settings.branches)
-                self.lastidxvgs = self.lastidxvgs + self.Settings.branches
-                self.add_idxvgs_to_var_list.append(var)
+    def add_power_to_idxvgs(self,dev):
+        """Adds idxvgs for data not included in ePHASORsim output ports."""
+        if dev == 'Line':
+            """Adds Line Pij, Pji, Qij, Qji, Sij, Sji"""
+            Idxvgs_Update = dict()
+            self.lastidxvgs +=1
+            for var in SysPar['Line']:
+                if var in self.varheader_list:
+                    continue
+                else:
+                    Idxvgs_Update[var] = range(self.lastidxvgs, self.lastidxvgs + self.Settings.branches)
+                    self.lastidxvgs = self.lastidxvgs + self.Settings.branches
+                    self.add_idxvgs_to_var_list.append(var)
 
-
-        # Convert to numpy column arrays
-        for var, val in Idxvgs_Update.items():
-            Idxvgs_Update[var] = array(val).T
-
-        return Idxvgs_Update
-
-    def add_bus_power_to_idxvgs(self):
-        """Adds Bus P and Q Idxvgs"""
-        Idxvgs_Update = dict()
-        self.lastidxvgs +=1
-        for var in SysPar['Bus']:
-            if var in self.varheader_list:
-                continue
-            else:
-                Idxvgs_Update[var] = range(self.lastidxvgs, self.lastidxvgs + self.Settings.nBus)
-                self.lastidxvgs = self.lastidxvgs + self.Settings.nBus
-                self.add_idxvgs_to_var_list.append(var)
+        if dev == 'Bus':
+            """Adds Bus P and Q Idxvgs"""
+            Idxvgs_Update = dict()
+            self.lastidxvgs += 1
+            for var in SysPar['Bus']:
+                if var in self.varheader_list:
+                    continue
+                else:
+                    Idxvgs_Update[var] = range(self.lastidxvgs, self.lastidxvgs + self.Settings.nBus)
+                    self.lastidxvgs = self.lastidxvgs + self.Settings.nBus
+                    self.add_idxvgs_to_var_list.append(var)
 
         # Convert to numpy column arrays
         for var, val in Idxvgs_Update.items():
             Idxvgs_Update[var] = array(val).T
 
         return Idxvgs_Update
+
 
     def add_vars_varheader(self,Device):
-        """Adds proper heading for the new var data after it is added to Idxgvs"""
+        """Adds proper heading for new var data after it is added to Idxgvs"""
 
         Varheader_Update = []
         for var in self.add_idxvgs_to_var_list:
@@ -387,12 +390,28 @@ class SimControl(object):
         logging.debug("Disconnected from %s model")
 
     def pause(self):
-        """Pause function. TODO"""
-        pass
+        """Pause function."""
+
+        if self.isRunning:
+            OpalApiPy.PauseConsole()
+            OpalApiPy.Pause()
+            logging.debug("Model and Console are now paused")
+
+        else:
+            logging.debug("Model is not running")
+
+        self.update_states()
 
     def resume(self):
-        """Resume function. TODO"""
-        pass
+        """Resume function."""
+
+        if self.isPaused:
+            self.start()
+
+        else:
+            logging.debug("Model must be paused to resume")
+
+        self.update_states()
 
     @property
     def textModelState(self):

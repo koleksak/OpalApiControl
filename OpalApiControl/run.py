@@ -11,7 +11,7 @@ from consts import  *
 import logging
 
 
-def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None, server='tcp://127.0.0.1:5678'):
+def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None,server='tcp://127.0.0.1:5678',add_power_devs=None):
     """Run a model in ePHASORsim using RT-LAB APIs"""
     ret = 0
     if (not project) or (not model):
@@ -48,12 +48,8 @@ def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None,
     sim.load()
 
     sim_data.get_sysparam()
-    sim_data.get_varheader_idxvgs()
+    sim_data.get_varheader_idxvgs(add_power_devs)
     sim.set_settings(sim_data.Settings)
-    # sim_data.Idxvgs['Line'].update(sim.add_branch_power_to_idxvgs())
-    # sim_data.Varheader.extend(sim.add_vars_varheader(sim_data.Idxvgs['Line']))
-    # sim_data.Idxvgs['Bus'].update(sim.add_bus_power_to_idxvgs())
-    # sim_data.Varheader.extend(sim.add_vars_varheader(sim_data.Idxvgs['Bus']))
     streaming.send_init()
     logging.debug('Varheader, SysParam and Idxvgs sent.')
     sleep(0.5)

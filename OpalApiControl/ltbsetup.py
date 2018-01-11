@@ -43,10 +43,16 @@ class LTBSetup(object):
         self.Idxvgs =None
 
 
-    def get_varheader_idxvgs(self):
+    def get_varheader_idxvgs(self,add_power_devs):
+        """Gets variable names and indices for streaming.  Adds power for varheader and idxvgs for
+        specified devices.
+
+        ex:
+        add_power = ['Line','Bus']"""
+
         if not self.sim:
             logging.error('Pass SimControl object to LTBData to get Varheader and Idxvgs.')
-        self.Varheader, self.Idxvgs = self.sim.varheader_idxvgs()
+        self.Varheader, self.Idxvgs = self.sim.varheader_idxvgs(add_power_devs)
 
     def get_sysparam(self):
         self.Settings = psse.init_pf_to_stream(self.raw, self.dyr)

@@ -121,8 +121,6 @@ class DeviceModels():
             row_data = ['outgoing', var]
             row_data.extend(self.KeepVarsOrdered[var])
             row_init.extend(row_data)
-            # row_init.append(var)
-            # row_init.extend(self.KeepVarsOrdered[var])
             self.ExcelTemp.append(row_init)
             pins_sheet.append(row_init)
 
@@ -158,8 +156,7 @@ class DeviceModels():
         row_data = [str(i_o), str(var)]
         row_data.extend(var_init)
         row_init.extend(row_data)
-        # row_init.append(str(var))
-        # row_init.extend(var_init)
+
         return row_init
 
     def add_var_to_excel_by_gen(self, var,i_o):
@@ -170,8 +167,7 @@ class DeviceModels():
         row_data = [str(i_o), str(var)]
         row_data.extend(var_init)
         row_init.extend(row_data)
-        # row_init.append(str(var))
-        # row_init.extend(var_init)
+
         return row_init
 
     def add_var_to_excel_by_load(self, var,i_o, type):
@@ -182,8 +178,7 @@ class DeviceModels():
         row_data = [str(i_o), str(var)]
         row_data.extend(var_init)
         row_init.extend(row_data)
-        # row_init.append(str(var))
-        # row_init.extend(var_init)
+
         return row_init
 
     def add_var_to_excel_by_branch(self, var, order, i_o):
@@ -213,8 +208,7 @@ class DeviceModels():
         row_data = [str(i_o), str(var)]
         row_data.extend(var_init)
         row_init.extend(row_data)
-        # row_init.append(str(var))
-        # row_init.extend(var_init)
+
         return row_init
 
     def create_excel_file_pins_bus(self): #TODO: arrange in order by var. Must be done for ports to match var list in SysPar
@@ -243,8 +237,6 @@ class DeviceModels():
                     row_data = ['outgoing','Gen_' + str(bus) + '_Vars']
                     row_data.extend(tmprow)
                     row_init.extend(row_data)
-                    # row_init.append( 'Gen_' + str(bus) + '_Vars')
-                    # row_init.extend(tmprow)
                     self.ExcelTemp.append(tmprow)
                     pins_sheet.append(row_init)
 
