@@ -10,5 +10,8 @@ if __name__ == "__main__":
     cui = 'tcp://160.36.59.189:5000'
     kirsten = 'tcp://160.36.56.211:9898'
     ehsan = 'tcp://10.129.132.192:8801'
-    run_model(project='WECC_DBW_RealTime', model='Real_Time', raw='WECC_10%Wind_PSSE_RAWCoords.raw', dyr='WECC_10%Wind_PSSE_DYR.dyr',
-              path='C:/RT-LABv11_Workspace_New/', server=cui_aw)
+    cui_ltb7 = 'tcp://160.36.56.211:9900'
+    prod = 'tcp://160.36.58.82:8898'
+
+    run_model(project='WECC_DBW_RealTime_Area_2_4', model='Real_Time_Area_2_4', raw='WECC_10%Wind_PSSE_RAWCoords.raw', dyr='WECC_10%Wind_PSSE_DYR.dyr',
+              path='C:/RT-LABv11_Workspace_New/', server=prod)

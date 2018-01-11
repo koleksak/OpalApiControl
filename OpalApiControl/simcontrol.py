@@ -170,7 +170,7 @@ class SimControl(object):
             indexed = False
             matlab_idx = idx + 1
 
-            if 'Busfreq' in item:
+            if 'Pij' in item:
                 pass
 
             for dev, vars in SysPar.items():
@@ -275,13 +275,17 @@ class SimControl(object):
         if self.isRunning:
             try:
                 sigVals, monitorInfo, simTimeStep, endFrame = OpalApiPy.GetAcqGroupSyncSignals(self._acqGroup - 1, 0, 0, 1, 1)
+
+                # sigVals, monitorInfo, simTimeStep, endFrame = OpalApiPy.GetAcqGroupSyncSignals(self._acqGroup - 1, 0, 0, 1, 100)
+                # sigVals2, monitorInfo2, simTimeStep2, endFrame2 = OpalApiPy.GetAcqGroupSyncSignals(self._acqGroup, 0, 0, 1, 1)
+                # sigVals = (sigVals1, sigVals2)
             except:
                 self._started = False
                 logging.debug('Data acquisition exception. Simulation may have completed.')
                 ret_t = -1.
             else:
                 missedData, offset, self.simulationTime, _ = monitorInfo
-                self.simulationTime = time() - self.startSysTime
+                # self.simulationTime = time() - self.startSysTime
 
                 ret_t = self.simulationTime
 
@@ -330,17 +334,18 @@ class SimControl(object):
                 msg = 'Sim Time: {}, next acq: {}, last acq: {}, elapsed: {}'.format(self.simulationTime, nextAcqTime, self._lastAcqTime, time() - a)
                 logging.debug(msg)
 
-                # if self._lastAcqTime == -1:
-                #     self._lastAcqTime = self.simulationTime - self.t_acq
-                #
-                # elif self.simulationTime - nextAcqTime < -sample_time_error:
-                #     logging.debug('Pass...')
-                # elif abs(self.simulationTime - nextAcqTime) <= sample_time_error:
-                #     self._lastAcqTime = self.simulationTime
+                if self._lastAcqTime == -1:
+                    self._lastAcqTime = self.simulationTime - self.t_acq
+
+                elif self.simulationTime - nextAcqTime < -sample_time_error:
+                    logging.debug('Pass...')
+                elif abs(self.simulationTime - nextAcqTime) <= sample_time_error:
+                    self._lastAcqTime = self.simulationTime
                 #     logging.debug('Data acquired at t = {}'.format(self.simulationTime))
-                # elif self.simulationTime - self._lastAcqTime > sample_time_error:
-                #     self._lastAcqTime = self.simulationTime
-                #     logging.warning('Under-sampling occurred at t = {}'.format(self.simulationTime))
+                elif self.simulationTime - self._lastAcqTime > sample_time_error:
+                    self._lastAcqTime = self.simulationTime
+                    logging.warning('Under-sampling occurred at t = {}'.format(self.simulationTime))
+
             #     # else:
             #     #     logging.debug('Something weird happened during acquisition')
 
