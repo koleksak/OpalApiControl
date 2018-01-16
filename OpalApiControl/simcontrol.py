@@ -16,7 +16,7 @@ from time import time
 
 class SimControl(object):
     """RT-LAB simulation control class"""
-    def __init__(self,project, model, path=None, t_acq=1./30):
+    def __init__(self,project, model, path=None, t_acq=1./30, pills=None):
         self.project = project
         self.model = model
         self.path = path
@@ -45,6 +45,7 @@ class SimControl(object):
         self._loaded = False
         self._started = False
         self._lastAcqTime = -1
+        self._pills = pills
 
         # Settings - modifiable
         self._rtMode = SW_SYNC
@@ -258,6 +259,7 @@ class SimControl(object):
         return Varheader_Update
 
     def set_start_time(self):
+        #TODO:Fix start time method for resuming simulation
         if not self.startSysTime:
             self.startSysTime = time()
 
@@ -272,7 +274,7 @@ class SimControl(object):
 
         ret_t = 0.
         retval = None
-        if self.isRunning:
+        if self.isRunning and self._pills['start'].isSet():
             try:
                 sigVals, monitorInfo, simTimeStep, endFrame = OpalApiPy.GetAcqGroupSyncSignals(self._acqGroup - 1, 0, 0, 1, 1)
 
@@ -311,6 +313,7 @@ class SimControl(object):
                     ret_t = self.simulationTime
                 else:
                     logging.debug('Something weird happened during acquisition')
+
         return ret_t, int(ret_t/self.t_acq), retval
 
     def acquire_data_test(self):
@@ -388,11 +391,13 @@ class SimControl(object):
         logging.debug("Model %s is now reset.")
         logging.debug("System Control Released")
 
-        OpalApiPy.GetSystemControl(state=0)
+        OpalApiPy.GetSystemControl(0)
         logging.debug("System Control is released")
 
         OpalApiPy.Disconnect()
         logging.debug("Disconnected from %s model")
+
+        self._pills['stop'].clear()
 
     def pause(self):
         """Pause function."""
@@ -401,22 +406,22 @@ class SimControl(object):
             OpalApiPy.PauseConsole()
             OpalApiPy.Pause()
             logging.debug("Model and Console are now paused")
-
+            self._pills['start'].clear()
+            self._pills['pause'].clear()
         else:
             logging.debug("Model is not running")
-
-        self.update_states()
+        self._started = False
 
     def resume(self):
         """Resume function."""
 
-        if self.isPaused:
-            self.start()
+        self._pills['resume'].clear()
+        self._pills['start'].isSet()
+        self.start()
 
-        else:
-            logging.debug("Model must be paused to resume")
 
-        self.update_states()
+
+
 
     @property
     def textModelState(self):

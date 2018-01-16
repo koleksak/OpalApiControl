@@ -10,7 +10,7 @@ from time import sleep,time
 
 class Streaming(object):
     """Class for DiME data streaming"""
-    def __init__(self, name, server, ltb_data=None):
+    def __init__(self, name, server, ltb_data=None,pills=None):
         assert ltb_data is not None
 
         self._name = name
@@ -20,6 +20,7 @@ class Streaming(object):
 
         # Internal flags
         self._dime_started = False
+        self._pills = pills
 
         # Internal data
         self.moduleInfo = dict()
@@ -161,7 +162,7 @@ class Streaming(object):
     def run(self):
         """Start automatic data acquisition and streaming"""
         self.ltb_data.sim.set_start_time()
-        while True:
+        while self._pills['start'].isSet():
             self.sync_and_handle()
             t, k, varout = self.ltb_data.sim.acquire_data()
             if t == -1:  # end of data acquisition
@@ -172,6 +173,13 @@ class Streaming(object):
                 continue
             else:
                 self.vars_to_modules(t, k, varout)
+
+        if self._pills['pause'].isSet():
+            self.ltb_data.sim.pause()
+            sleep(2)
+
+
+
         # while True:
         #     self.ltb_data.sim.acquire_data_test()
 
