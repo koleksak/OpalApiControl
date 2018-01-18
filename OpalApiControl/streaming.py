@@ -176,7 +176,7 @@ class Streaming(object):
 
         if self._pills['pause'].isSet():
             self.ltb_data.sim.pause()
-            sleep(2)
+            sleep(5)
 
 
 

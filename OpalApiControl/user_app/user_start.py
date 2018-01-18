@@ -3,9 +3,9 @@ from run import run_model
 import threading
 import logging
 import cmd, sys
-import pprint
+from time import sleep
 
-logging.basicConfig(level=logging.CRITICAL)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class UserApp(cmd.Cmd):
@@ -17,8 +17,13 @@ class UserApp(cmd.Cmd):
         self.pause = threading.Event()
         self.resume = threading.Event()
         self.end = threading.Event()
-        self.pills = {'start':self.start, 'stop':self.stop, 'pause':self.pause, 'resume':self.resume, 'end':self.end}
-        self.first_start = True
+        self.lock = threading.Lock()
+        self.condition = threading.Condition()
+        self.loaded_sim = threading.Condition()
+        self.pills = {'start':self.start, 'stop':self.stop, 'pause':self.pause, 'resume':self.resume,
+                      'end':self.end, 'lock':self.lock,
+                      'condition':self.condition, 'loaded':self.loaded_sim}
+        self.run = None
 
     def settings(self):
         file = open(self.user_settings_file, 'r')
@@ -32,45 +37,66 @@ class UserApp(cmd.Cmd):
             except:
                 pass
 
-    def start_sim(self):
-
-        logging.debug("<initializing simulation run>")
-        self.pills['start'].set()
-
-
+    def initialize_sim(self):
+        logging.debug("<initializing simulation thread>")
         run = threading.Thread(name='Sim_Start', target=run_model,
-                                   kwargs={'project':self.setting_params['project'],
-                                           'model':self.setting_params['model'],
-                                           'raw':self.setting_params['raw'],
-                                           'dyr':self.setting_params['dyr'],
-                                           'path':self.setting_params['path'],
-                                           'server':self.setting_params['server'],
-                                           'add_power_devs':self.setting_params['add_power_devs'],
-                                           'pills':self.pills})
-        run.setDaemon(True)
-        run.start()
-        self.first_start = False
+                               kwargs={'project': self.setting_params['project'],
+                                       'model': self.setting_params['model'],
+                                       'raw': self.setting_params['raw'],
+                                       'dyr': self.setting_params['dyr'],
+                                       'path': self.setting_params['path'],
+                                       'server': self.setting_params['server'],
+                                       'add_power_devs': self.setting_params['add_power_devs'],
+                                       'pills': self.pills})
+        return run
+
+    def start_sim(self):
+        self.run = self.initialize_sim()
+        logging.debug("<starting simulation>")
+        self.run.setDaemon(True)
+        self.run.start()
+        # sleep(30)
+        while not self.pills['start'].isSet():
+            self.pills['loaded'].acquire()
+            logging.debug("<start set waiting>")
+            self.pills['loaded'].wait()
+            logging.debug("<start setting>")
+            self.pills['start'].set()
+            sleep(3)
+            self.pills['condition'].acquire()
+            self.pills['condition'].notifyAll()
+            self.pills['condition'].release()
+            self.pills['loaded'].release()
 
     def stop_sim(self):
-        logging.debug("<stopping simulation. Notifying acquisition thread to end>")
+        logging.debug("<setting stop simulation pills>")
+        self.pills['lock'].acquire()
         self.pills['stop'].set()
         self.pills['start'].clear()
+        self.pills['lock'].release()
+        sleep(1)
+        self.pills['condition'].acquire()
+        self.pills['condition'].notifyAll()
+        self.pills['condition'].release()
 
     def pause_sim(self):
-        logging.debug("<pausing simulation. Notifying acquisition thread to pause>")
+        logging.debug("<setting pause simulation pills>")
+        self.pills['lock'].acquire()
         self.pills['pause'].set()
         self.pills['start'].clear()
         self.pills['stop'].clear()
+        self.pills['lock'].release()
 
     def resume_sim(self):
-        logging.debug("<resuming simulation. Notifying acquisition thread to start>")
+        logging.debug("<setting resume simulation pills>")
+        self.pills['lock'].acquire()
+        self.pills['condition'].acquire()
         self.pills['start'].set()
         self.pills['resume'].set()
         self.pills['pause'].clear()
-        self.pills['stop'].clear()
-
-
-
+        self.pills['lock'].release()
+        self.pills['condition'].notifyAll()
+        self.pills['condition'].release()
 
 app = UserApp()
 class UserInterface(cmd.Cmd):
@@ -80,12 +106,8 @@ class UserInterface(cmd.Cmd):
 
     def do_start(self,arg):
         """Loads, and Runs simulation for model in user_settings file"""
-        if app.first_start:
-            logging.info("<starting simulation>")
-            app.start_sim()
-        else:
-            logging.info("<resuming simulation>")
-            app.resume_sim()
+        logging.info("<starting simulation>")
+        app.start_sim()
 
     def do_settings(self,arg):
         """Shows current file settings in user_settings file"""

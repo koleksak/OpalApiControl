@@ -46,6 +46,10 @@ def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None,
 
     sim.open()
     sim.load()
+    streaming._pills['loaded'].acquire()
+    streaming._pills['loaded'].notifyAll()
+    logging.debug("<loading done... notifying>")
+    streaming._pills['loaded'].release()
 
     sim_data.get_sysparam()
     sim.set_settings(sim_data.Settings)
@@ -54,16 +58,20 @@ def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None,
     logging.debug('Varheader, SysParam and Idxvgs sent.')
     sleep(0.5)
 
-    sim.start()
-
     while not streaming._pills['end'].isSet():
-        if streaming._pills['start'].isSet() and not streaming._pills['resume'].isSet():
-            # sim.update_states()
-            streaming.run()
-        elif streaming._pills['start'].isSet() and streaming._pills['resume'].isSet():
-            # sim.update_states()
-            sim.resume()
-            streaming.run()
-        elif streaming._pills['stop'].isSet():
-            sim.stop()
+        with streaming._pills['condition']:
+            logging.debug("<waiting to start>")
+            streaming._pills['condition'].wait()
+            logging.debug("Condition set. Resuming run sequence")
+
+            if streaming._pills['start'].isSet() and not streaming._pills['resume'].isSet():
+                # sim.update_states()
+                sim.start()
+                streaming.run()
+            elif streaming._pills['start'].isSet() and streaming._pills['resume'].isSet():
+                # sim.update_states()
+                sim.resume()
+                streaming.run()
+            elif streaming._pills['stop'].isSet():
+                sim.stop()
 

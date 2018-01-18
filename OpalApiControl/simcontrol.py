@@ -266,7 +266,7 @@ class SimControl(object):
     def acquire_data(self):
         """Acquire data from running simulation"""
 
-        if not self._started:
+        if not self._pills['start'].isSet():
             logging.error('Run model before acquiring data.')
 
         sample_time_error = 0.5 * self.t_acq
@@ -301,7 +301,7 @@ class SimControl(object):
                     self._lastAcqTime = self.simulationTime
                     _, rem = divmod(self._lastAcqTime, 5)  # show info every 5 seconds
                     # if abs(rem) < self.t_acq:
-                    logging.debug('Data acquired at t = {}'.format(self.simulationTime))
+                    # logging.debug('Data acquired at t = {}'.format(self.simulationTime))
 
                     ret_t = self.simulationTime
                 elif self.simulationTime - self._lastAcqTime > sample_time_error + 0.001:
@@ -397,7 +397,9 @@ class SimControl(object):
         OpalApiPy.Disconnect()
         logging.debug("Disconnected from %s model")
 
+        self._pills['lock'].acquire()
         self._pills['stop'].clear()
+        self._pills['lock'].release()
 
     def pause(self):
         """Pause function."""
@@ -406,17 +408,21 @@ class SimControl(object):
             OpalApiPy.PauseConsole()
             OpalApiPy.Pause()
             logging.debug("Model and Console are now paused")
+            self._pills['lock'].acquire()
             self._pills['start'].clear()
             self._pills['pause'].clear()
+            self._pills['lock'].release()
+
         else:
             logging.debug("Model is not running")
         self._started = False
 
     def resume(self):
         """Resume function."""
-
+        self._pills['lock'].acquire()
         self._pills['resume'].clear()
         self._pills['start'].isSet()
+        self._pills['lock'].release()
         self.start()
 
 
