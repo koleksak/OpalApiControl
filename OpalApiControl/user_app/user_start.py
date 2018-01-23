@@ -58,7 +58,7 @@ class UserApp(cmd.Cmd):
         # sleep(30)
         while not self.pills['start'].isSet():
             self.pills['loaded'].acquire()
-            logging.debug("<start set waiting>")
+            logging.debug("<set start waiting>")
             self.pills['loaded'].wait()
             logging.debug("<start setting>")
             self.pills['start'].set()
@@ -94,9 +94,11 @@ class UserApp(cmd.Cmd):
         self.pills['start'].set()
         self.pills['resume'].set()
         self.pills['pause'].clear()
+        self.pills['stop'].clear()
         self.pills['lock'].release()
         self.pills['condition'].notifyAll()
         self.pills['condition'].release()
+        sleep(2)
 
 app = UserApp()
 class UserInterface(cmd.Cmd):
@@ -112,8 +114,8 @@ class UserInterface(cmd.Cmd):
     def do_settings(self,arg):
         """Shows current file settings in user_settings file"""
         print('******Settings Parameters******')
-        for name in app.setting_params:
-            print ("Param:{0:15}    Info:{0:10}".format(name,app.setting_params[name]))
+        for param, name in app.setting_params.items():
+            print ("Param:{0:15}    Info:{1:10} ".format(param, name))
 
     def do_stop(self,arg):
         """Stops running simulation"""
@@ -124,11 +126,13 @@ class UserInterface(cmd.Cmd):
         """Pauses running simulation"""
         logging.info("<pausing simulation>")
         app.pause_sim()
+        sleep(2)
 
     def do_resume(self,arg):
         """Resumes paused simulation"""
         logging.info("<resuming simulation>")
         app.resume_sim()
+        sleep(2)
 
     def do_quit(self,arg):
         """Closes User Interface session"""

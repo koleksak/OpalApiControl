@@ -11,7 +11,7 @@ import itertools
 from consts import *
 import numpy
 from numpy import array
-from time import time
+from time import time, sleep
 
 
 class SimControl(object):
@@ -114,7 +114,6 @@ class SimControl(object):
             self.update_states()
             retval = True
             logging.info("Connection to PAUSED model {} successful.".format(self.model))
-
 
         else:
             logging.error('Compile and assign model before loading or running.')
@@ -266,9 +265,6 @@ class SimControl(object):
     def acquire_data(self):
         """Acquire data from running simulation"""
 
-        if not self._pills['start'].isSet():
-            logging.error('Run model before acquiring data.')
-
         sample_time_error = 0.5 * self.t_acq
         nextAcqTime = self._lastAcqTime + self.t_acq
 
@@ -276,6 +272,7 @@ class SimControl(object):
         retval = None
         if self.isRunning and self._pills['start'].isSet():
             try:
+
                 sigVals, monitorInfo, simTimeStep, endFrame = OpalApiPy.GetAcqGroupSyncSignals(self._acqGroup - 1, 0, 0, 1, 1)
 
                 # sigVals, monitorInfo, simTimeStep, endFrame = OpalApiPy.GetAcqGroupSyncSignals(self._acqGroup - 1, 0, 0, 1, 100)
@@ -307,6 +304,8 @@ class SimControl(object):
                 elif self.simulationTime - self._lastAcqTime > sample_time_error + 0.001:
                     retval = sigVals
                     logging.warning('Under-sampling occurred at t = {}'.format(self.simulationTime))
+                    if self._pills['resume'].isSet():
+                        print('in acquire__resume')
 
                     self._lastAcqTime = self.simulationTime
 
@@ -379,7 +378,7 @@ class SimControl(object):
         if self.isRunning:
             OpalApiPy.PauseConsole()
             OpalApiPy.Pause()
-            logging.debug("Model and Console are now paused")
+            logging.debug("Model and Console are pausing")
 
         OpalApiPy.ResetConsole()
         logging.debug("Console is now reset")
@@ -407,7 +406,7 @@ class SimControl(object):
         if self.isRunning:
             OpalApiPy.PauseConsole()
             OpalApiPy.Pause()
-            logging.debug("Model and Console are now paused")
+            logging.info("Model and Console are pausing")
             self._pills['lock'].acquire()
             self._pills['start'].clear()
             self._pills['pause'].clear()
@@ -419,11 +418,14 @@ class SimControl(object):
 
     def resume(self):
         """Resume function."""
+        self.start()
         self._pills['lock'].acquire()
-        self._pills['resume'].clear()
+        # self._pills['resume'].clear()
         self._pills['start'].isSet()
         self._pills['lock'].release()
-        self.start()
+        print("sleeping)")
+        sleep(2)
+        # self.start()
 
 
 
