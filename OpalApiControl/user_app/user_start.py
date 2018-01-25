@@ -5,9 +5,9 @@ import logging
 import cmd, sys
 from time import sleep
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
-
+lock = threading.Lock()
 class UserApp(cmd.Cmd):
     def __init__(self):
         self.user_settings_file = 'C:/Users/opalrt/repos/OpalApiControl/OpalApiControl/user_app/user_settings'
@@ -17,7 +17,7 @@ class UserApp(cmd.Cmd):
         self.pause = threading.Event()
         self.resume = threading.Event()
         self.end = threading.Event()
-        self.lock = threading.Lock()
+        self.lock = lock
         self.condition = threading.Condition()
         self.loaded_sim = threading.Condition()
         self.pills = {'start':self.start, 'stop':self.stop, 'pause':self.pause, 'resume':self.resume,
@@ -70,35 +70,28 @@ class UserApp(cmd.Cmd):
 
     def stop_sim(self):
         logging.debug("<setting stop simulation pills>")
-        self.pills['lock'].acquire()
         self.pills['stop'].set()
         self.pills['start'].clear()
-        self.pills['lock'].release()
-        sleep(1)
-        self.pills['condition'].acquire()
-        self.pills['condition'].notifyAll()
-        self.pills['condition'].release()
+        self.pills['resume'].clear()
+
+        #TODO: After stopping, don't resend init_variables to requesting modules
+        print("<<<<Please quit and start new connection to run another simulation>>>")
 
     def pause_sim(self):
         logging.debug("<setting pause simulation pills>")
-        self.pills['lock'].acquire()
         self.pills['pause'].set()
         self.pills['start'].clear()
         self.pills['stop'].clear()
-        self.pills['lock'].release()
 
     def resume_sim(self):
         logging.debug("<setting resume simulation pills>")
-        self.pills['lock'].acquire()
-        self.pills['condition'].acquire()
-        self.pills['start'].set()
         self.pills['resume'].set()
+        self.pills['start'].set()
         self.pills['pause'].clear()
         self.pills['stop'].clear()
-        self.pills['lock'].release()
-        self.pills['condition'].notifyAll()
-        self.pills['condition'].release()
-        sleep(2)
+
+
+
 
 app = UserApp()
 class UserInterface(cmd.Cmd):
@@ -109,7 +102,9 @@ class UserInterface(cmd.Cmd):
     def do_start(self,arg):
         """Loads, and Runs simulation for model in user_settings file"""
         logging.info("<starting simulation>")
+        lock.acquire()
         app.start_sim()
+        lock.release()
 
     def do_settings(self,arg):
         """Shows current file settings in user_settings file"""
@@ -120,19 +115,35 @@ class UserInterface(cmd.Cmd):
     def do_stop(self,arg):
         """Stops running simulation"""
         logging.info("<stopping simulation>")
+        lock.acquire()
         app.stop_sim()
+        sleep(2)
+        app.pills['condition'].acquire()
+        app.pills['condition'].notifyAll()
+        app.pills['condition'].release()
+        lock.release()
+
 
     def do_pause(self,arg):
         """Pauses running simulation"""
         logging.info("<pausing simulation>")
+        lock.acquire()
         app.pause_sim()
-        sleep(2)
+        lock.release()
 
     def do_resume(self,arg):
         """Resumes paused simulation"""
+        #TODO: Resume hangs sometimes when it gets to run simulation while loop
         logging.info("<resuming simulation>")
+        lock.acquire()
         app.resume_sim()
         sleep(2)
+        app.pills['condition'].acquire()
+        app.pills['condition'].notifyAll()
+        app.pills['condition'].release()
+        lock.release()
+
+
 
     def do_quit(self,arg):
         """Closes User Interface session"""
@@ -140,7 +151,7 @@ class UserInterface(cmd.Cmd):
         input = raw_input("Quit session? y/n    ")
         input = input.lower()
         if input == 'y':
-            self.do_stop("stop")
+            # self.do_stop("stop")
             sys.exit()
         elif input == 'n':
             pass

@@ -61,16 +61,17 @@ def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None,
     while not streaming._pills['end'].isSet():
         with streaming._pills['condition']:
             logging.info("<waiting to start>")
-            streaming._pills['condition'].wait()
-            logging.debug("Condition set. Starting run sequence")
+            if not streaming._pills['stop'].isSet():
+                streaming._pills['condition'].wait()
+                logging.debug("Condition set. Starting run sequence")
 
-            if streaming._pills['start'].isSet() and not streaming._pills['resume'].isSet():
-                sim.start()
-                streaming.run()
-            elif streaming._pills['start'].isSet() and streaming._pills['resume'].isSet():
-                sim.resume()
+                if streaming._pills['start'].isSet() and not streaming._pills['resume'].isSet():
+                    sim.start()
+                elif streaming._pills['start'].isSet() and streaming._pills['resume'].isSet():
+                    sim.resume()
                 streaming.run()
 
-            elif streaming._pills['stop'].isSet():
+            else:
                 sim.stop()
+                break
 

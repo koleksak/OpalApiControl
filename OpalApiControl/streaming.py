@@ -163,11 +163,11 @@ class Streaming(object):
     def run(self):
         """Start automatic data acquisition and streaming"""
         self.ltb_data.sim.set_start_time()
-        logging.debug("in run loop")
 
-        while self._pills['start'].isSet():
-            # if self._pills['resume'].isSet():
-            #     print('run after resume')
+        while True:
+            if self._pills['pause'].isSet() or self._pills['stop'].isSet():
+                break
+
             self.sync_and_handle()
             t, k, varout = self.ltb_data.sim.acquire_data()
 
@@ -182,7 +182,6 @@ class Streaming(object):
 
         if self._pills['pause'].isSet():
             self.ltb_data.sim.pause()
-            sleep(5)
 
         logging.debug("exiting run loop")
 

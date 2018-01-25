@@ -199,7 +199,7 @@ class SimControl(object):
                 Idxvgs[dev][var] = array(val).T
         self.IdxvgsStore = Idxvgs
 
-        if add_power_devs == None:
+        if add_power_devs[0] == 'None':
             pass
         else:
             for dev in add_power_devs:
@@ -270,6 +270,7 @@ class SimControl(object):
 
         ret_t = 0.
         retval = None
+
         if self.isRunning and self._pills['start'].isSet():
             try:
 
@@ -304,8 +305,8 @@ class SimControl(object):
                 elif self.simulationTime - self._lastAcqTime > sample_time_error + 0.001:
                     retval = sigVals
                     logging.warning('Under-sampling occurred at t = {}'.format(self.simulationTime))
-                    if self._pills['resume'].isSet():
-                        print('in acquire__resume')
+
+
 
                     self._lastAcqTime = self.simulationTime
 
@@ -396,9 +397,10 @@ class SimControl(object):
         OpalApiPy.Disconnect()
         logging.debug("Disconnected from %s model")
 
-        self._pills['lock'].acquire()
+        # self._pills['lock'].acquire()
         self._pills['stop'].clear()
-        self._pills['lock'].release()
+        self._started = False
+        # self._pills['lock'].release()
 
     def pause(self):
         """Pause function."""
@@ -407,10 +409,10 @@ class SimControl(object):
             OpalApiPy.PauseConsole()
             OpalApiPy.Pause()
             logging.info("Model and Console are pausing")
-            self._pills['lock'].acquire()
+            # self._pills['lock'].acquire()
             self._pills['start'].clear()
             self._pills['pause'].clear()
-            self._pills['lock'].release()
+            # self._pills['lock'].release()
 
         else:
             logging.debug("Model is not running")
@@ -419,13 +421,11 @@ class SimControl(object):
     def resume(self):
         """Resume function."""
         self.start()
-        self._pills['lock'].acquire()
-        # self._pills['resume'].clear()
-        self._pills['start'].isSet()
-        self._pills['lock'].release()
-        print("sleeping)")
-        sleep(2)
-        # self.start()
+        # self._pills['lock'].acquire()
+        # # self._pills['resume'].clear()
+        # self._pills['start'].isSet()
+        # self._pills['lock'].release()
+
 
 
 

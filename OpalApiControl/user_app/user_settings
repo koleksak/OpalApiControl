@@ -3,5 +3,5 @@ model = phasor03_PSSE
 raw = Curent02_final_ConstZCoords.raw
 dyr = Curent02_final.dyr
 path = C:/RT-LABv11_Workspace_New/
-server = tcp://127.0.0.1:5000
-add_power_devs = Line,Bus
+server = tcp://127.0.0.1:5678
+add_power_devs = None
