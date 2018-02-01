@@ -11,9 +11,10 @@ from consts import  *
 import logging
 
 
-def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None,server='tcp://127.0.0.1:5678',add_power_devs=None,pills=None):
+def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None,server='tcp://127.0.0.1:5678',add_power_devs=None,pills=None,condition=None):
     """Run a model in ePHASORsim using RT-LAB APIs"""
     ret = 0
+    start_condition = condition
     if (not project) or (not model):
         logging.error('RT-LAB project or model undefined.')
         sys.exit(-1)
@@ -58,20 +59,20 @@ def run_model(project=None, model=None, raw=None, dyr=None, xls=None, path=None,
     logging.debug('Varheader, SysParam and Idxvgs sent.')
     sleep(2)
 
-    while not streaming._pills['end'].isSet():
-        with streaming._pills['condition']:
+    while not streaming._pills['stop'].isSet():
+        with start_condition:
             logging.info("<waiting to start>")
-            if not streaming._pills['stop'].isSet():
-                streaming._pills['condition'].wait()
-                logging.debug("Condition set. Starting run sequence")
+            start_condition.wait()
 
-                if streaming._pills['start'].isSet() and not streaming._pills['resume'].isSet():
-                    sim.start()
-                elif streaming._pills['start'].isSet() and streaming._pills['resume'].isSet():
-                    sim.resume()
-                streaming.run()
+            logging.debug("Condition set. Starting run sequence")
 
-            else:
-                sim.stop()
-                break
+            if streaming._pills['start'].isSet() and not streaming._pills['resume'].isSet():
+                sim.start()
+            elif streaming._pills['start'].isSet() and streaming._pills['resume'].isSet():
+                sim.resume()
+            streaming.run()
+    sim.stop()
+
+
+
 

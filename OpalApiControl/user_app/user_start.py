@@ -4,8 +4,9 @@ import threading
 import logging
 import cmd, sys
 from time import sleep
-
+from twisted.internet import reactor
 logging.basicConfig(level=logging.INFO)
+
 
 lock = threading.Lock()
 class UserApp(cmd.Cmd):
@@ -21,8 +22,8 @@ class UserApp(cmd.Cmd):
         self.condition = threading.Condition()
         self.loaded_sim = threading.Condition()
         self.pills = {'start':self.start, 'stop':self.stop, 'pause':self.pause, 'resume':self.resume,
-                      'end':self.end, 'lock':self.lock,
-                      'condition':self.condition, 'loaded':self.loaded_sim}
+                      'end':self.end,
+                      'loaded':self.loaded_sim}
         self.run = None
 
     def settings(self):
@@ -47,13 +48,13 @@ class UserApp(cmd.Cmd):
                                        'path': self.setting_params['path'],
                                        'server': self.setting_params['server'],
                                        'add_power_devs': self.setting_params['add_power_devs'],
-                                       'pills': self.pills})
+                                       'pills': self.pills,'condition':self.condition })
         return run
 
     def start_sim(self):
         self.run = self.initialize_sim()
         logging.debug("<starting simulation>")
-        self.run.setDaemon(True)
+        # self.run.setDaemon(True)
         self.run.start()
         # sleep(30)
         while not self.pills['start'].isSet():
@@ -63,9 +64,9 @@ class UserApp(cmd.Cmd):
             logging.debug("<start setting>")
             self.pills['start'].set()
             sleep(3)
-            self.pills['condition'].acquire()
-            self.pills['condition'].notifyAll()
-            self.pills['condition'].release()
+            self.condition.acquire()
+            self.condition.notifyAll()
+            self.condition.release()
             self.pills['loaded'].release()
 
     def stop_sim(self):
@@ -73,6 +74,8 @@ class UserApp(cmd.Cmd):
         self.pills['stop'].set()
         self.pills['start'].clear()
         self.pills['resume'].clear()
+        self.condition.acquire()
+        self.condition.release()
 
         #TODO: After stopping, don't resend init_variables to requesting modules
         print("<<<<Please quit and start new connection to run another simulation>>>")
@@ -118,10 +121,11 @@ class UserInterface(cmd.Cmd):
         lock.acquire()
         app.stop_sim()
         sleep(2)
-        app.pills['condition'].acquire()
-        app.pills['condition'].notifyAll()
-        app.pills['condition'].release()
+        app.condition.acquire()
+        app.condition.notifyAll()
+        app.condition.release()
         lock.release()
+        # reactor.callLater(1,reactor.stop())
 
 
     def do_pause(self,arg):
@@ -130,18 +134,18 @@ class UserInterface(cmd.Cmd):
         lock.acquire()
         app.pause_sim()
         lock.release()
+        sleep(2)
 
     def do_resume(self,arg):
-        """Resumes paused simulation"""
+        """Resumes paused simulation. Currently Unavailable"""
         #TODO: Resume hangs sometimes when it gets to run simulation while loop
-        logging.info("<resuming simulation>")
-        lock.acquire()
-        app.resume_sim()
-        sleep(2)
-        app.pills['condition'].acquire()
-        app.pills['condition'].notifyAll()
-        app.pills['condition'].release()
-        lock.release()
+        print("Resume function not available. Please stop and restart simulation.")
+        # logging.info("<resuming simulation>")
+        # app.resume_sim()
+        # app.condition.acquire()
+        # app.condition.notifyAll()
+        # app.condition.release()
+        # sleep(5)
 
 
 
@@ -157,6 +161,7 @@ class UserInterface(cmd.Cmd):
             pass
         else:
             print("Invalid input")
+
 
 if __name__ == '__main__':
 

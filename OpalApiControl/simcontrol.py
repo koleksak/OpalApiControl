@@ -399,6 +399,7 @@ class SimControl(object):
 
         # self._pills['lock'].acquire()
         self._pills['stop'].clear()
+        self._pills['resume'].clear()
         self._started = False
         # self._pills['lock'].release()
 

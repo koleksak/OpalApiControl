@@ -17,7 +17,6 @@ pi = 3.14159265358973
 jpi2 = 1.5707963267948966j
 rad2deg = 57.295779513082323
 deg2rad = 0.017453292519943
-
 global Settings
 Settings = Settings()
 
@@ -1002,24 +1001,24 @@ def to_number(s):
 
 
 def init_pf_to_stream(rawfile, dyrfile):
-    read(rawfile)
-    readadd(dyrfile)
-    Settings.nBus = len(Settings.Bus)
-    Settings.nLine = len(Settings.Line)
-    Settings.Breaker = [19, 8, 100, 345, 60, 1, 6.0, 0, 1, 0]
+    if Settings.nBus == 0:
+        read(rawfile)
+        readadd(dyrfile)
+        Settings.nBus = len(Settings.Bus)
+        Settings.nLine = len(Settings.Line)
+        Settings.Breaker = [19, 8, 100, 345, 60, 1, 6.0, 0, 1, 0]
 
-    # Add PMU(must calculate)
-    for bus in range(0, Settings.nBus):
-        data = [bus + 2, 0.001, 0.001, 1]
-        Settings.Busfreq.append(data)
+        for bus in range(0, Settings.nBus):
+            datafreq = [bus + 2, 0.001, 0.001, 1]
+            datapmu = [bus + 2, Settings.BusStore[bus+2]['Vn'], 60, 0.05, 0.05, 1, 30, 2, 0]
+            Settings.Busfreq.append(datafreq)
+            Settings.Pmu.append(datapmu)
 
-    for bus in range(0, Settings.nBus - 1):
-        data = [bus + 2, Settings.BusStore[bus + 2]['Vn'], 60, 0.05, 0.05, 1, 30, 2, 0]
-        Settings.Pmu.append(data)
+        Settings.set_sys_params()
 
-    Settings.set_sys_params()
-
-    logging.info('PSS/E raw data parsing completed')
+        logging.info('PSS/E raw data parsing completed')
+    else:
+        logging.info("Using last simulation's settings.")
     return Settings
 
 

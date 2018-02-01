@@ -6,7 +6,7 @@ from collections import OrderedDict
 from dime import dime
 import logging
 from time import sleep,time
-
+import threading
 
 class Streaming(object):
     """Class for DiME data streaming"""
@@ -164,14 +164,12 @@ class Streaming(object):
         """Start automatic data acquisition and streaming"""
         self.ltb_data.sim.set_start_time()
 
-        while True:
-            if self._pills['pause'].isSet() or self._pills['stop'].isSet():
-                break
+        while self._pills['start'].isSet():
 
             self.sync_and_handle()
             t, k, varout = self.ltb_data.sim.acquire_data()
 
-            if t == -1:  # end of data acquisition
+            if t == -1 :  # end of data acquisition
                 self.send_done()
                 self.exit_dime()
                 break
@@ -182,6 +180,12 @@ class Streaming(object):
 
         if self._pills['pause'].isSet():
             self.ltb_data.sim.pause()
+
+        if self._pills['stop'].isSet():
+
+            self.send_done()
+            self.exit_dime()
+
 
         logging.debug("exiting run loop")
 
